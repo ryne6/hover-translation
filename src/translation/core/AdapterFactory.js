@@ -13,8 +13,6 @@ import { GeminiAdapter } from '../adapters/ai/GeminiAdapter.js';
  * 负责创建和管理翻译适配器实例
  */
 export class AdapterFactory {
-  static adapters = new Map();
-  static instances = new Map();
 
   /**
    * 初始化工厂，注册所有适配器
@@ -171,6 +169,9 @@ export class AdapterFactory {
     return this.instances.get(providerId) || null;
   }
 }
+
+AdapterFactory.adapters = new Map();
+AdapterFactory.instances = new Map();
 
 // 自动初始化
 AdapterFactory.initialize();

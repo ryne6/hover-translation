@@ -185,11 +185,11 @@ export class BaseTranslationAdapter extends ITranslationAdapter {
   /**
    * 子类必须实现的方法
    */
-  async translate(request) {
+  async translate(_request) {
     throw new Error(`translate() must be implemented by ${this.providerInfo.id}`);
   }
 
-  async detectLanguage(text) {
+  async detectLanguage(_text) {
     throw new Error(`detectLanguage() must be implemented by ${this.providerInfo.id}`);
   }
 }

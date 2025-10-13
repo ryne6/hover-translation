@@ -1,4 +1,3 @@
-import { debounce } from '../shared/utils.js';
 import { EVENTS } from '../shared/constants.js';
 
 /**
@@ -56,7 +55,7 @@ export class TextSelector {
    * 处理文字选择事件
    * @param {Event} event 事件对象
    */
-  handleTextSelection(event) {
+  handleTextSelection(_event) {
     // 防抖处理
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);

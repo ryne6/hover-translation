@@ -43,7 +43,7 @@ export class ConfigManager {
 
     // 检查是否至少有一个启用的服务
     const enabledProviders = Object.entries(settings.providers)
-      .filter(([id, config]) => config && config.enabled);
+      .filter(([_id, config]) => config && config.enabled);
 
     if (enabledProviders.length === 0) {
       return { valid: false, message: '请至少启用一个翻译服务' };
@@ -193,8 +193,8 @@ export class ConfigManager {
    */
   static logConfig(settings) {
     const enabledProviders = Object.entries(settings.providers || {})
-      .filter(([id, config]) => config && config.enabled)
-      .map(([id]) => id);
+      .filter(([_id, config]) => config && config.enabled)
+      .map(([providerId]) => providerId);
 
     console.log('📋 Configuration Summary:', {
       primaryProvider: settings.primaryProvider,

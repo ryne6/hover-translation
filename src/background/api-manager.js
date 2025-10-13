@@ -45,8 +45,8 @@ export class APIManager {
         primary: config.primaryProvider,
         fallback: config.fallbackProviders,
         enabledProviders: Object.entries(config.providers)
-          .filter(([id, cfg]) => cfg.enabled)
-          .map(([id]) => id),
+          .filter(([_id, cfg]) => cfg.enabled)
+          .map(([providerId]) => providerId),
       });
 
       // 3. 创建并初始化 TranslationManager

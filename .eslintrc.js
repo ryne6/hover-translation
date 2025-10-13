@@ -9,12 +9,12 @@ module.exports = {
     'eslint:recommended'
   ],
   parserOptions: {
-    ecmaVersion: 12,
+    ecmaVersion: 2022,
     sourceType: 'module'
   },
   rules: {
-    'no-console': 'warn',
-    'no-unused-vars': 'warn',
+    'no-console': 'off',
+    'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     'prefer-const': 'error',
     'no-var': 'error'
   },

@@ -332,7 +332,7 @@ export class HoverBox {
       return;
     }
 
-    const normalized = original.toLowerCase().replace(/[^a-z'\-]/g, '');
+    const normalized = original.toLowerCase().replace(/[^a-z'-]/g, '');
     if (!normalized) return;
 
     this.pronunciationSectionEl.style.display = 'block';

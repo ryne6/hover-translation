@@ -2,6 +2,9 @@
  * 翻译模块主入口
  */
 
+import { TranslationManager } from './core/TranslationManager.js';
+import { AdapterFactory } from './core/AdapterFactory.js';
+
 // 导出核心类
 export { TranslationManager } from './core/TranslationManager.js';
 export { AdapterFactory } from './core/AdapterFactory.js';

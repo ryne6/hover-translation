@@ -353,8 +353,8 @@ class PopupManager {
     // 如果禁用了主要服务，需要切换
     if (!enabled && this.settings.primaryProvider === providerId) {
       const enabledProviders = Object.entries(this.settings.providers)
-        .filter(([id, config]) => config.enabled)
-        .map(([id]) => id);
+        .filter(([_id, config]) => config.enabled)
+        .map(([providerId]) => providerId);
       
       this.settings.primaryProvider = enabledProviders[0] || '';
     }

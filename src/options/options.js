@@ -394,8 +394,8 @@ class PopupManager {
     // 如果禁用了主要服务，需要切换
     if (!enabled && this.settings.primaryProvider === providerId) {
       const enabledProviders = Object.entries(this.settings.providers)
-        .filter(([id, config]) => config.enabled)
-        .map(([id]) => id);
+        .filter(([_id, config]) => config.enabled)
+        .map(([providerId]) => providerId);
       
       this.settings.primaryProvider = enabledProviders[0] || '';
     }
@@ -744,7 +744,7 @@ class PopupManager {
         
         // 2. 验证是否至少有一个启用的服务
         const enabledProviders = Object.entries(this.settings.providers || {})
-          .filter(([id, config]) => config.enabled);
+          .filter(([_id, config]) => config.enabled);
         
         if (enabledProviders.length === 0) {
           this.showError('请至少启用一个翻译服务！');

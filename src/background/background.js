@@ -169,7 +169,7 @@ class BackgroundService {
 
     try {
       switch (action) {
-        case 'translate':
+        case 'translate': {
           await this.ensureReady();
           const result = await this.apiManager.translate(
             request.text,
@@ -178,42 +178,43 @@ class BackgroundService {
           );
           sendResponse({ success: true, data: result });
           break;
+        }
 
-        case 'detectLanguage':
+        case 'detectLanguage': {
           const detectedLang = await this.apiManager.detectLanguage(request.text);
           sendResponse({ success: true, data: detectedLang });
           break;
+        }
 
-        case 'getSettings':
+        case 'getSettings': {
           const settings = await this.storageManager.getSettings();
           sendResponse({ success: true, data: settings });
           break;
+        }
 
-        case 'saveSettings':
+        case 'saveSettings': {
           const saved = await this.storageManager.saveSettings(request.settings);
           sendResponse({ success: saved });
           break;
+        }
 
-        case 'updateTranslationConfig':
+        case 'updateTranslationConfig': {
           Logger.group('BackgroundService', 'Updating translation config');
           try {
-            // 验证配置
             const validation = ConfigManager.validate(request.settings);
             if (!validation.valid) {
               Logger.error('BackgroundService', 'Invalid configuration', validation.message);
               sendResponse({ success: false, error: validation.message });
-              return;
+              break;
             }
 
-            // 保存配置
             await this.storageManager.saveSettings(request.settings);
-          Logger.success('BackgroundService', 'Settings saved to storage');
+            Logger.success('BackgroundService', 'Settings saved to storage');
 
-          // 重新初始化翻译管理器
-          await this.initializeTranslation(request.settings);
-          Logger.success('BackgroundService', 'Translation manager re-initialized');
-          
-          sendResponse({ success: true });
+            await this.initializeTranslation(request.settings);
+            Logger.success('BackgroundService', 'Translation manager re-initialized');
+
+            sendResponse({ success: true });
           } catch (error) {
             Logger.error('BackgroundService', 'Failed to update config', error);
             sendResponse({ success: false, error: error.message });
@@ -221,28 +222,32 @@ class BackgroundService {
             Logger.groupEnd();
           }
           break;
+        }
 
-        case 'getAvailableProviders':
+        case 'getAvailableProviders': {
           const providers = this.apiManager.getAvailableProviders();
           Logger.log('BackgroundService', `Returning ${providers.length} providers`);
           sendResponse({ success: true, data: providers });
           break;
+        }
 
-        case 'validateProvider':
+        case 'validateProvider': {
           const validation = await this.apiManager.validateProvider(
             request.providerId,
             request.config
           );
           sendResponse({ success: true, data: validation });
           break;
+        }
 
-        case 'getQuota':
+        case 'getQuota': {
           await this.ensureReady();
           const quota = await this.apiManager.getQuota(request.providerId);
           sendResponse({ success: true, data: quota });
           break;
+        }
 
-        case 'getTranslationStats':
+        case 'getTranslationStats': {
           await this.ensureReady();
           const stats = this.apiManager.getStats();
           const cacheStats = this.apiManager.getCacheStats();
@@ -254,22 +259,25 @@ class BackgroundService {
             },
           });
           break;
+        }
 
-        case 'clearCache':
+        case 'clearCache': {
           await this.ensureReady();
           this.apiManager.clearCache();
           Logger.success('BackgroundService', 'Cache cleared');
           sendResponse({ success: true });
           break;
+        }
 
-        case 'clearStats':
+        case 'clearStats': {
           await this.ensureReady();
           // TODO: 实现统计清除
           Logger.success('BackgroundService', 'Stats cleared');
           sendResponse({ success: true });
           break;
+        }
 
-        case 'parallelTranslate':
+        case 'parallelTranslate': {
           await this.ensureReady();
           const parallelResults = await this.apiManager.parallelTranslate(
             request.text,
@@ -277,17 +285,19 @@ class BackgroundService {
             request.targetLang,
             request.providerIds
           );
-          
+
           const resultsObj = {};
           for (const [providerId, result] of parallelResults.entries()) {
             resultsObj[providerId] = result;
           }
           sendResponse({ success: true, data: resultsObj });
           break;
+        }
 
-        default:
+        default: {
           Logger.warn('BackgroundService', `Unknown action: ${action}`);
           sendResponse({ success: false, error: 'Unknown action' });
+        }
       }
     } catch (error) {
       Logger.error('BackgroundService', `Error handling ${action}`, error);

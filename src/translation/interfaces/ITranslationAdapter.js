@@ -8,7 +8,7 @@ export class ITranslationAdapter {
    * @param {import('./types.js').TranslationRequest} request - 翻译请求
    * @returns {Promise<import('./types.js').TranslationResponse>}
    */
-  async translate(request) {
+  async translate(_request) {
     throw new Error('translate() must be implemented');
   }
 
@@ -17,7 +17,7 @@ export class ITranslationAdapter {
    * @param {string} text - 要检测的文本
    * @returns {Promise<import('./types.js').LanguageDetectionResult>}
    */
-  async detectLanguage(text) {
+  async detectLanguage(_text) {
     throw new Error('detectLanguage() must be implemented');
   }
 
@@ -25,7 +25,7 @@ export class ITranslationAdapter {
    * 配置适配器
    * @param {import('./types.js').AdapterConfig} config - 配置对象
    */
-  configure(config) {
+  configure(_config) {
     throw new Error('configure() must be implemented');
   }
 
@@ -59,7 +59,7 @@ export class ITranslationAdapter {
    * @param {string} targetLang - 目标语言代码
    * @returns {boolean}
    */
-  isLanguagePairSupported(sourceLang, targetLang) {
+  isLanguagePairSupported(_sourceLang, _targetLang) {
     throw new Error('isLanguagePairSupported() must be implemented');
   }
 

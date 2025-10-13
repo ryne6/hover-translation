@@ -1,5 +1,3 @@
-import { detectLanguage } from './utils.js';
-
 /**
  * 语言检测器
  */
