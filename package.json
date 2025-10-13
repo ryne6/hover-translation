@@ -1,0 +1,37 @@
+{
+  "name": "hover-translation",
+  "version": "0.1.0",
+  "description": "智能悬停翻译 Chrome 浏览器插件",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "node build.js",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "package": "npm run build && zip -r hover-translation.zip dist/",
+    "clean": "rm -rf dist/"
+  },
+  "keywords": [
+    "chrome-extension",
+    "translation",
+    "hover",
+    "browser-plugin"
+  ],
+  "author": "Hover Translation Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@vitest/ui": "^1.6.1",
+    "eslint": "^8.52.0",
+    "jsdom": "^23.2.0",
+    "prettier": "^3.0.3",
+    "vite": "^4.5.14",
+    "vitest": "^1.6.1"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}

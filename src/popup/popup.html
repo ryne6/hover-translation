@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hover Translation - 设置</title>
+  <link rel="stylesheet" href="styles/variables.css">
+  <link rel="stylesheet" href="styles/popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- 头部 -->
+    <header class="popup-header">
+      <div class="header-content">
+        <div class="logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#EFEFEF"/>
+            <path d="M9 12h14v2H9v-2zm0 5h14v2H9v-2zm0 5h10v2H9v-2z" fill="#555555"/>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h1 class="popup-title">Hover Translation</h1>
+          <div class="popup-version">v0.2.0</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 标签页导航 -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="providers">翻译服务</button>
+      <button class="tab" data-tab="settings">基础设置</button>
+      <button class="tab" data-tab="advanced">高级选项</button>
+      <button class="tab" data-tab="stats">使用统计</button>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="popup-content">
+      
+      <!-- 翻译服务面板 -->
+      <section class="tab-panel active" id="panel-providers">
+        <h2 class="section-title">选择翻译服务</h2>
+        
+        <!-- 服务分类：传统翻译 -->
+        <div class="provider-category">
+          <h3 class="category-title">传统翻译服务</h3>
+          <div class="provider-grid">
+            
+            <!-- Google Translate -->
+            <div class="provider-card" data-provider="google">
+              <div class="provider-header">
+                <div class="provider-icon">🌐</div>
+                <div class="provider-info">
+                  <h4 class="provider-name">Google 翻译</h4>
+                  <p class="provider-desc">支持最多语言</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="provider-toggle" data-provider="google">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="provider-config collapsed">
+                <div class="form-group">
+                  <label class="form-label">API Key</label>
+                  <div class="input-group">
+                    <input type="password" class="form-input api-key" placeholder="输入 Google Cloud API Key" data-provider="google">
+                    <button class="btn-icon toggle-password" title="显示/隐藏">👁️</button>
+                  </div>
+                </div>
+                <div class="provider-actions">
+                  <button class="btn-small btn-validate" data-provider="google">验证</button>
+                  <button class="btn-small btn-docs" data-provider="google">文档</button>
+                  <span class="validation-status" data-provider="google"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DeepL -->
+            <div class="provider-card" data-provider="deepl">
+              <div class="provider-header">
+                <div class="provider-icon">💎</div>
+                <div class="provider-info">
+                  <h4 class="provider-name">DeepL 翻译</h4>
+                  <p class="provider-desc">质量最高</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="provider-toggle" data-provider="deepl">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="provider-config collapsed">
+                <div class="form-group">
+                  <label class="form-label">API Key</label>
+                  <div class="input-group">
+                    <input type="password" class="form-input api-key" placeholder="输入 DeepL API Key" data-provider="deepl">
+                    <button class="btn-icon toggle-password">👁️</button>
+                  </div>
+                  <p class="form-hint">Free API Key 以 :fx 结尾</p>
+                </div>
+                <div class="provider-actions">
+                  <button class="btn-small btn-validate" data-provider="deepl">验证</button>
+                  <button class="btn-small btn-quota" data-provider="deepl">配额</button>
+                  <span class="validation-status" data-provider="deepl"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Baidu -->
+            <div class="provider-card" data-provider="baidu">
+              <div class="provider-header">
+                <div class="provider-icon">🐻</div>
+                <div class="provider-info">
+                  <h4 class="provider-name">百度翻译</h4>
+                  <p class="provider-desc">中文翻译优秀</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="provider-toggle" data-provider="baidu">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="provider-config collapsed">
+                <div class="form-group">
+                  <label class="form-label">APP ID</label>
+                  <input type="text" class="form-input" placeholder="输入 APP ID" data-provider="baidu" data-field="appId">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">密钥</label>
+                  <input type="password" class="form-input api-key" placeholder="输入密钥" data-provider="baidu" data-field="secret">
+                </div>
+                <div class="provider-actions">
+                  <button class="btn-small btn-validate" data-provider="baidu">验证</button>
+                  <span class="validation-status" data-provider="baidu"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Microsoft -->
+            <div class="provider-card" data-provider="microsoft">
+              <div class="provider-header">
+                <div class="provider-icon">🔷</div>
+                <div class="provider-info">
+                  <h4 class="provider-name">Microsoft 翻译</h4>
+                  <p class="provider-desc">企业级可靠</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="provider-toggle" data-provider="microsoft">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="provider-config collapsed">
+                <div class="form-group">
+                  <label class="form-label">订阅密钥</label>
+                  <input type="password" class="form-input api-key" placeholder="Azure 订阅密钥" data-provider="microsoft">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">区域</label>
+                  <select class="form-select" data-provider="microsoft" data-field="region">
+                    <option value="global">全球</option>
+                    <option value="eastasia">东亚</option>
+                    <option value="southeastasia">东南亚</option>
+                    <option value="westus">美国西部</option>
+                  </select>
+                </div>
+                <div class="provider-actions">
+                  <button class="btn-small btn-validate" data-provider="microsoft">验证</button>
+                  <span class="validation-status" data-provider="microsoft"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Youdao -->
+            <div class="provider-card" data-provider="youdao">
+              <div class="provider-header">
+                <div class="provider-icon">📚</div>
+                <div class="provider-info">
+                  <h4 class="provider-name">有道翻译</h4>
+                  <p class="provider-desc">中英互译优秀</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="provider-toggle" data-provider="youdao">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="provider-config collapsed">
+                <div class="form-group">
+                  <label class="form-label">应用 ID</label>
+                  <input type="text" class="form-input" placeholder="输入应用 ID" data-provider="youdao" data-field="appId">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">应用密钥</label>
+                  <input type="password" class="form-input api-key" placeholder="输入应用密钥" data-provider="youdao" data-field="secret">
+                </div>
+                <div class="provider-actions">
+                  <button class="btn-small btn-validate" data-provider="youdao">验证</button>
+                  <span class="validation-status" data-provider="youdao"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tencent -->
+            <div class="provider-card" data-provider="tencent">
+              <div class="provider-header">
+                <div class="provider-icon">🐧</div>
+                <div class="provider-info">
+                  <h4 class="provider-name">腾讯翻译</h4>
+                  <p class="provider-desc">性价比高</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="provider-toggle" data-provider="tencent">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="provider-config collapsed">
+                <div class="form-group">
+                  <label class="form-label">SecretId</label>
+                  <input type="text" class="form-input" placeholder="输入 SecretId" data-provider="tencent" data-field="secretId">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">SecretKey</label>
+                  <input type="password" class="form-input api-key" placeholder="输入 SecretKey" data-provider="tencent" data-field="secretKey">
+                </div>
+                <div class="provider-actions">
+                  <button class="btn-small btn-validate" data-provider="tencent">验证</button>
+                  <span class="validation-status" data-provider="tencent"></span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 服务分类：AI 翻译 -->
+        <div class="provider-category">
+          <h3 class="category-title">AI 翻译服务</h3>
+          <div class="provider-grid">
+            
+            <!-- OpenAI -->
+            <div class="provider-card" data-provider="openai">
+              <div class="provider-header">
+                <div class="provider-icon">🤖</div>
+                <div class="provider-info">
+                  <h4 class="provider-name">OpenAI GPT</h4>
+                  <p class="provider-desc">AI 驱动，最自然</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="provider-toggle" data-provider="openai">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="provider-config collapsed">
+                <div class="form-group">
+                  <label class="form-label">API Key</label>
+                  <input type="password" class="form-input api-key" placeholder="sk-..." data-provider="openai">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">模型</label>
+                  <select class="form-select" data-provider="openai" data-field="model">
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo (快速)</option>
+                    <option value="gpt-4">GPT-4 (高质量)</option>
+                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                  </select>
+                </div>
+                <div class="provider-actions">
+                  <button class="btn-small btn-validate" data-provider="openai">验证</button>
+                  <span class="validation-status" data-provider="openai"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Claude -->
+            <div class="provider-card" data-provider="claude">
+              <div class="provider-header">
+                <div class="provider-icon">🧠</div>
+                <div class="provider-info">
+                  <h4 class="provider-name">Claude AI</h4>
+                  <p class="provider-desc">长文本优秀</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="provider-toggle" data-provider="claude">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="provider-config collapsed">
+                <div class="form-group">
+                  <label class="form-label">API Key</label>
+                  <input type="password" class="form-input api-key" placeholder="输入 Anthropic API Key" data-provider="claude">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">模型</label>
+                  <select class="form-select" data-provider="claude" data-field="model">
+                    <option value="claude-3-haiku-20240307">Claude 3 Haiku (快速)</option>
+                    <option value="claude-3-sonnet-20240229">Claude 3 Sonnet (平衡)</option>
+                    <option value="claude-3-opus-20240229">Claude 3 Opus (高质量)</option>
+                  </select>
+                </div>
+                <div class="provider-actions">
+                  <button class="btn-small btn-validate" data-provider="claude">验证</button>
+                  <span class="validation-status" data-provider="claude"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Gemini -->
+            <div class="provider-card" data-provider="gemini">
+              <div class="provider-header">
+                <div class="provider-icon">✨</div>
+                <div class="provider-info">
+                  <h4 class="provider-name">Gemini AI</h4>
+                  <p class="provider-desc">免费额度高</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" class="provider-toggle" data-provider="gemini">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="provider-config collapsed">
+                <div class="form-group">
+                  <label class="form-label">API Key</label>
+                  <input type="password" class="form-input api-key" placeholder="输入 Google AI API Key" data-provider="gemini">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">模型</label>
+                  <select class="form-select" data-provider="gemini" data-field="model">
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (免费)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                  </select>
+                </div>
+                <div class="provider-actions">
+                  <button class="btn-small btn-validate" data-provider="gemini">验证</button>
+                  <span class="validation-status" data-provider="gemini"></span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 主要服务选择 -->
+        <div class="primary-provider-section">
+          <h3 class="section-subtitle">主要翻译服务</h3>
+          <select class="form-select-large" id="primaryProvider">
+            <option value="">请先配置翻译服务</option>
+          </select>
+          <p class="form-hint">选择默认使用的翻译服务</p>
+        </div>
+
+        <!-- 备用服务配置 -->
+        <div class="fallback-section">
+          <h3 class="section-subtitle">
+            备用服务
+            <label class="inline-switch">
+              <input type="checkbox" id="autoFallback" checked>
+              <span class="slider-small"></span>
+              <span class="switch-label">自动降级</span>
+            </label>
+          </h3>
+          <div class="fallback-list" id="fallbackList">
+            <p class="empty-state">请先配置至少一个翻译服务</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 基础设置面板 -->
+      <section class="tab-panel" id="panel-settings">
+        <h2 class="section-title">基础设置</h2>
+        
+        <div class="setting-item">
+          <label class="setting-label" for="targetLanguage">目标语言</label>
+          <select id="targetLanguage" class="setting-select">
+            <option value="zh-CN">简体中文</option>
+            <option value="zh-TW">繁體中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="es">Español</option>
+            <option value="ru">Русский</option>
+            <option value="it">Italiano</option>
+            <option value="pt">Português</option>
+          </select>
+        </div>
+        
+        <div class="setting-item">
+          <label class="setting-label" for="sourceLanguage">源语言</label>
+          <select id="sourceLanguage" class="setting-select">
+            <option value="auto">自动检测</option>
+            <option value="zh-CN">简体中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="es">Español</option>
+            <option value="ru">Русский</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <label class="setting-label">功能选项</label>
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" id="enableCache" checked>
+              <span class="checkbox-label">启用翻译缓存</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="autoDetect" checked>
+              <span class="checkbox-label">自动检测语言</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="showOriginal" checked>
+              <span class="checkbox-label">显示原文</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- 高级选项面板 -->
+      <section class="tab-panel" id="panel-advanced">
+        <h2 class="section-title">高级选项</h2>
+        
+        <div class="setting-item">
+          <label class="setting-label">翻译风格</label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="formality" value="default" checked>
+              <span class="radio-label">默认</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="formality" value="formal">
+              <span class="radio-label">正式</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="formality" value="informal">
+              <span class="radio-label">非正式</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <label class="setting-label" for="domain">专业领域</label>
+          <select id="domain" class="setting-select">
+            <option value="general">通用</option>
+            <option value="technical">技术</option>
+            <option value="medical">医学</option>
+            <option value="legal">法律</option>
+            <option value="finance">金融</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <label class="setting-label" for="timeout">请求超时（秒）</label>
+          <input type="number" id="timeout" class="setting-input" min="5" max="60" value="30">
+        </div>
+
+        <div class="setting-item">
+          <label class="setting-label" for="retryCount">重试次数</label>
+          <input type="number" id="retryCount" class="setting-input" min="0" max="5" value="3">
+        </div>
+
+        <div class="setting-item">
+          <label class="setting-label">并行翻译</label>
+          <label class="checkbox-item">
+            <input type="checkbox" id="parallelTranslation">
+            <span class="checkbox-label">启用并行翻译（同时调用多个服务对比）</span>
+          </label>
+        </div>
+
+        <div class="setting-item">
+          <label class="setting-label">语言对偏好</label>
+          <div class="language-pair-preferences" id="languagePairPreferences">
+            <button class="btn-secondary btn-small" id="addLanguagePair">+ 添加语言对偏好</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 使用统计面板 -->
+      <section class="tab-panel" id="panel-stats">
+        <h2 class="section-title">使用统计</h2>
+        
+        <!-- 总体统计 -->
+        <div class="stats-overview">
+          <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+              <div class="stat-label">总请求数</div>
+              <div class="stat-value" id="totalRequests">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <div class="stat-label">成功率</div>
+              <div class="stat-value" id="successRate">0%</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📝</div>
+            <div class="stat-info">
+              <div class="stat-label">翻译字符数</div>
+              <div class="stat-value" id="totalCharacters">0</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-info">
+              <div class="stat-label">预估成本</div>
+              <div class="stat-value" id="totalCost">$0.00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 今日统计 -->
+        <div class="today-stats">
+          <h3 class="section-subtitle">今日使用</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">请求数</span>
+              <span class="stat-value" id="todayRequests">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">字符数</span>
+              <span class="stat-value" id="todayCharacters">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">成本</span>
+              <span class="stat-value" id="todayCost">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 各提供商统计 -->
+        <div class="provider-stats">
+          <h3 class="section-subtitle">各服务统计</h3>
+          <div id="providerStatsList" class="provider-stats-list">
+            <p class="empty-state">暂无统计数据</p>
+          </div>
+        </div>
+
+        <!-- 缓存统计 -->
+        <div class="cache-stats">
+          <h3 class="section-subtitle">缓存统计</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">缓存条目</span>
+              <span class="stat-value" id="cacheSize">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">使用率</span>
+              <span class="stat-value" id="cacheUsage">0%</span>
+            </div>
+          </div>
+          <button class="btn-secondary btn-small" id="clearCache">清空缓存</button>
+        </div>
+
+        <div class="stats-actions">
+          <button class="btn-secondary" id="clearStats">清空统计</button>
+          <button class="btn-secondary" id="exportStats">导出统计</button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 底部 -->
+    <footer class="popup-footer">
+      <button class="btn-primary" id="saveSettings">保存设置</button>
+      <button class="btn-secondary" id="resetSettings">重置为默认</button>
+    </footer>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Hover Translation",
+  "version": "0.1.0",
+  "description": "智能悬停翻译插件 - 选中即翻译，优雅无干扰",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://translation.googleapis.com/*",
+    "https://fanyi-api.baidu.com/*",
+    "https://api.dictionaryapi.dev/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": [
+        "styles/variables.css",
+        "styles/hover-box.css",
+        "styles/content.css"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Hover Translation - 点击打开设置"
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+:root {
+  /* 主品牌色（低饱和灰系） */
+  --primary-gradient: linear-gradient(0deg, #efefef 0%, #efefef 100%);
+  --primary-color: #555555;
+  --primary-dark: #3d3d3d;
+  --primary-light: #777777;
+  
+  /* 辅助色 */
+  --secondary-color: #888d96;
+  --secondary-light: #9ca1aa;
+  --secondary-dark: #6f737a;
+  
+  /* 中性色系 */
+  --text-primary: #555555;
+  --text-secondary: #666666;
+  --text-muted: #888888;
+  --text-inverse: #ffffff;
+  
+  /* 背景色系 */
+  --bg-primary: #f6f6f6;
+  --bg-secondary: #efefef;
+  --bg-tertiary: #e4e4e4;
+  --bg-overlay: rgba(239, 239, 239, 0.96);
+  
+  /* 边框和分割线 */
+  --border-light: #dadada;
+  --border-medium: #c8c8c8;
+  --border-dark: #b0b0b0;
+  
+  /* 按钮描边与交互色 */
+  --button-border: #888d96;
+  --button-hover-bg: #ffffff;
+  --button-hover-border: #888d96;
+  
+  /* 状态色（低饱和） */
+  --success-color: #6cb37c;
+  --warning-color: #cfa26b;
+  --error-color: #c97a7a;
+  --info-color: #7a9cc6;
+  
+  /* 字体系统 */
+  --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 
+                  'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 
+               'Source Code Pro', monospace;
+  
+  /* 字体大小 */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  
+  /* 字体权重 */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* 行高 */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  
+  /* 间距系统 - 4px 网格 */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  
+  /* 圆角系统 */
+  --radius-none: 0;
+  --radius-sm: 0.125rem;   /* 2px */
+  --radius-base: 0.25rem;  /* 4px */
+  --radius-md: 0.375rem;   /* 6px */
+  --radius-lg: 0.5rem;     /* 8px */
+  --radius-xl: 0.75rem;    /* 12px */
+  --radius-2xl: 1rem;      /* 16px */
+  --radius-3xl: 1.5rem;    /* 24px */
+  --radius-full: 9999px;
+  
+  /* 阴影系统 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-base: 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 3px 10px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 6px 16px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 10px 24px rgba(0, 0, 0, 0.12);
+  --shadow-inner: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-outline: 0 0 0 2px rgba(136, 141, 150, 0.3);
+  --shadow-focus: 0 0 0 2px rgba(85, 85, 85, 0.25);
+  
+  /* 动画时间 */
+  --duration-fast: 0.15s;
+  --duration-normal: 0.2s;
+  --duration-slow: 0.3s;
+  
+  /* 缓动函数 */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* 断点 */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* 深色主题 */
+[data-theme="dark"] {
+  --text-primary: #f7fafc;
+  --text-secondary: #e2e8f0;
+  --text-muted: #a0aec0;
+  --text-inverse: #2d3748;
+  
+  --bg-primary: #1a202c;
+  --bg-secondary: #2d3748;
+  --bg-tertiary: #4a5568;
+  --bg-overlay: rgba(26, 32, 44, 0.95);
+  
+  --border-light: #4a5568;
+  --border-medium: #718096;
+  --border-dark: #a0aec0;
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  :root {
+    --border-light: #000000;
+    --text-muted: #000000;
+    --shadow-base: 0 2px 4px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-normal: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,25 @@
+- [ ] Phase 1 — 基础设计令牌
+  - [ ] `src/styles/variables.css`：重设主/次文本色、背景色、按钮色、状态色，去除渐变与高饱和色；统一圆角、阴影。
+  - [ ] 清理未再使用的渐变变量（如 `--primary-gradient`）并确认无引用残留。
+- [ ] Phase 2 — 共性样式与悬浮框
+  - [ ] `src/styles/content.css` & `src/styles/hover-box.css`：应用新的背景、文本、按钮描边、阴影方案。
+  - [ ] `src/content/hover-box.js`：确保默认颜色、通知文案引用新色值，播放状态样式同步。
+  - [ ] 手动验证悬浮框在翻译、复制、发音、关闭时的视觉与交互。
+- [ ] Phase 3 — Popup 视图
+  - [ ] `src/popup/popup.html` & `src/popup/popup.css`：替换导航、统计卡片、按钮、表单的颜色与阴影；移除渐变背景。
+  - [ ] `src/popup/popup.js`：调整通知/提示颜色常量，使用统一描边按钮 class。
+  - [ ] 手动检查保存、验证、统计展示的配色与易读性。
+- [ ] Phase 4 — Options 页面
+  - [ ] `src/options/options.html` & `src/options/options.css`：更新布局背景、侧边栏、表单、按钮风格；清除渐变与彩色高亮。
+  - [ ] `src/options/options.js`：同步按钮 class/状态提示颜色。
+  - [ ] 逐页核对（翻译服务、基础设置、高级选项、统计、关于）是否符合新规范。
+- [ ] Phase 5 — 共用通知与状态提示
+  - [ ] `src/shared/utils.js` 中 `showNotification`：替换 success/warning/error/info 颜色为低饱和灰绿/灰黄/灰红/灰蓝，并确认调用处可读。
+  - [ ] 查找项目内硬编码颜色字符串，全部切换为新色方案或变量。
+- [ ] Phase 6 — 资产与杂项
+  - [ ] 评估 `assets/icons` 中的彩色图标，必要时提供灰阶版本或临时使用单色方案。
+  - [ ] 更新 README/文档中可能引用旧配色的截图说明（若存在）。
+- [ ] Phase 7 — 验证
+  - [ ] 运行 `npm run build`，确认构建成功。
+  - [ ] 运行 `npm test`，确保 70 项测试全部通过。
+  - [ ] 本地加载扩展，手动回归关键流程（翻译、保存设置、验证服务）。
