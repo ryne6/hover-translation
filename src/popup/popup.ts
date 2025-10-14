@@ -1,63 +1,108 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
-/**
- * 弹窗管理器（新版）
- * 支持多翻译引擎配置
- */
-class PopupManager {
-  constructor() {
-    this.providers = [];
-    this.settings = {};
-    this.stats = null;
-    
-    this.init();
+import type { ProviderConfigMap, ProviderInstanceConfig, TranslationSettings } from '../shared/config-manager';
+import { ConfigManager } from '../shared/config-manager';
+import { StorageManager } from '../shared/storage';
+import type { ProviderInfo, StatsSnapshot } from '../translation/interfaces/types';
+
+type ProviderCategory = ProviderInfo['category'];
+
+type ProviderSummary = {
+  id: string;
+  displayName: string;
+  category: ProviderCategory;
+  documentation?: string;
+  homepage?: string;
+  [key: string]: unknown;
+};
+
+interface PopupCacheStats {
+  size: number;
+  maxSize: number;
+  ttl: number;
+  usage: string;
+}
+
+type PopupStats = StatsSnapshot & {
+  cache?: PopupCacheStats;
+};
+
+interface RuntimeResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: unknown;
+}
+
+const qs = <T extends Element>(selector: string, root: Document | Element = document): T | null =>
+  root.querySelector(selector);
+
+const getById = <T extends HTMLElement>(id: string): T | null =>
+  document.getElementById(id) as T | null;
+
+const setText = (id: string, value: string | number): void => {
+  const element = getById<HTMLElement>(id);
+  if (element) {
+    element.textContent = String(value);
+  }
+};
+
+const sendRuntimeMessage = async <T>(message: unknown): Promise<T> => {
+  if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+    throw new Error('chrome.runtime unavailable');
   }
 
-  /**
-   * 初始化
-   */
-  async init() {
+  return new Promise<T>((resolve, reject) => {
+    chrome.runtime.sendMessage(message, (response) => {
+      const lastError = chrome.runtime?.lastError;
+      if (lastError) {
+        reject(new Error(lastError.message));
+        return;
+      }
+      resolve(response as T);
+    });
+  });
+};
+
+class PopupManager {
+  private readonly storage = new StorageManager();
+
+  private providers: ProviderSummary[] = [];
+
+  private settings: TranslationSettings = ConfigManager.getDefaults();
+
+  private stats: PopupStats | null = null;
+
+  constructor() {
+    void this.init();
+  }
+
+  private async init(): Promise<void> {
     try {
-      // 从后台服务获取所有可用的提供商
       await this.loadProviders();
-      console.log('Available providers:', this.providers);
-
-      // 加载用户设置
       await this.loadSettings();
-
-      // 初始化 UI
       this.initializeUI();
-
-      // 绑定事件
       this.bindEvents();
-
-      // 加载统计信息
       await this.loadStats();
-
       console.log('Popup initialized');
     } catch (error) {
       console.error('初始化失败:', error);
-      this.showError('初始化失败: ' + error.message);
+      const message = error instanceof Error ? error.message : String(error);
+      this.showError(`初始化失败: ${message}`);
     }
   }
 
-  /**
-   * 加载提供商列表
-   */
-  async loadProviders() {
+  private async loadProviders(): Promise<void> {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
+      this.providers = this.getDefaultProviders();
+      return;
+    }
+
     try {
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        const response = await chrome.runtime.sendMessage({ 
-          action: 'getAvailableProviders' 
-        });
-        if (response.success) {
-          this.providers = response.data || [];
-        } else {
-          // 如果获取失败，使用硬编码的提供商列表
-          this.providers = this.getDefaultProviders();
-        }
+      const response = await sendRuntimeMessage<RuntimeResponse<ProviderSummary[]>>({
+        action: 'getAvailableProviders'
+      });
+
+      if (response.success && Array.isArray(response.data)) {
+        this.providers = response.data;
       } else {
-        // 测试环境
         this.providers = this.getDefaultProviders();
       }
     } catch (error) {
@@ -66,10 +111,7 @@ class PopupManager {
     }
   }
 
-  /**
-   * 获取默认提供商列表（备用）
-   */
-  getDefaultProviders() {
+  private getDefaultProviders(): ProviderSummary[] {
     return [
       { id: 'google', displayName: 'Google 翻译', category: 'traditional' },
       { id: 'deepl', displayName: 'DeepL', category: 'traditional' },
@@ -79,163 +121,134 @@ class PopupManager {
       { id: 'tencent', displayName: '腾讯翻译', category: 'traditional' },
       { id: 'openai', displayName: 'OpenAI GPT', category: 'ai' },
       { id: 'claude', displayName: 'Claude AI', category: 'ai' },
-      { id: 'gemini', displayName: 'Gemini AI', category: 'ai' },
+      { id: 'gemini', displayName: 'Gemini AI', category: 'ai' }
     ];
   }
 
-  /**
-   * 加载设置
-   */
-  async loadSettings() {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      const result = await chrome.storage.sync.get(null);
-      this.settings = result || {};
-    } else {
-      // 测试环境
-      this.settings = {};
+  private async loadSettings(): Promise<void> {
+    try {
+      this.settings = await this.storage.getSettings();
+    } catch (error) {
+      console.error('加载设置失败:', error);
+      this.settings = ConfigManager.getDefaults();
     }
   }
 
-  /**
-   * 保存设置
-   */
-  async saveSettings() {
+  private async saveSettings(): Promise<void> {
     try {
-      if (typeof chrome !== 'undefined' && chrome.storage) {
-        await chrome.storage.sync.set(this.settings);
+      const saved = await this.storage.saveSettings(this.settings);
+      if (saved) {
         this.showSuccess('设置已保存');
+      } else {
+        this.showError('保存失败: 无法写入存储');
       }
     } catch (error) {
       console.error('保存设置失败:', error);
-      this.showError('保存失败: ' + error.message);
+      const message = error instanceof Error ? error.message : String(error);
+      this.showError(`保存失败: ${message}`);
     }
   }
 
-  /**
-   * 初始化 UI
-   */
-  initializeUI() {
-    // 初始化标签页
+  private initializeUI(): void {
     this.initializeTabs();
-
-    // 初始化提供商卡片
     this.initializeProviderCards();
-
-    // 初始化主要服务下拉框
     this.updatePrimaryProviderSelect();
-
-    // 初始化备用服务列表
     this.updateFallbackList();
-
-    // 加载保存的设置到 UI
     this.loadSettingsToUI();
   }
 
-  /**
-   * 初始化标签页
-   */
-  initializeTabs() {
-    const tabs = document.querySelectorAll('.tab');
-    const panels = document.querySelectorAll('.tab-panel');
+  private initializeTabs(): void {
+    const tabs = document.querySelectorAll<HTMLElement>('.tab');
+    const panels = document.querySelectorAll<HTMLElement>('.tab-panel');
 
-    tabs.forEach(tab => {
+    tabs.forEach((tab) => {
       tab.addEventListener('click', () => {
-        // 移除所有激活状态
-        tabs.forEach(t => t.classList.remove('active'));
-        panels.forEach(p => p.classList.remove('active'));
+        tabs.forEach((item) => item.classList.remove('active'));
+        panels.forEach((panel) => panel.classList.remove('active'));
 
-        // 激活当前标签
         tab.classList.add('active');
-        const panelId = 'panel-' + tab.dataset.tab;
-        document.getElementById(panelId)?.classList.add('active');
+        const panelId = tab.dataset.tab ? `panel-${tab.dataset.tab}` : '';
+        if (panelId) {
+          getById<HTMLElement>(panelId)?.classList.add('active');
+        }
       });
     });
   }
 
-  /**
-   * 初始化提供商卡片
-   */
-  initializeProviderCards() {
-    const cards = document.querySelectorAll('.provider-card');
+  private initializeProviderCards(): void {
+    const cards = document.querySelectorAll<HTMLElement>('.provider-card');
 
-    cards.forEach(card => {
-      const header = card.querySelector('.provider-header');
-      const config = card.querySelector('.provider-config');
+    cards.forEach((card) => {
+      const header = qs<HTMLElement>('.provider-header', card);
+      const configSection = qs<HTMLElement>('.provider-config', card);
 
-      // 点击头部展开/折叠配置
-      header.addEventListener('click', (e) => {
-        // 如果点击的是开关，不触发展开/折叠
-        if (e.target.classList.contains('provider-toggle') || 
-            e.target.classList.contains('slider')) {
+      header?.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement | null;
+        if (target?.classList.contains('provider-toggle') || target?.classList.contains('slider')) {
           return;
         }
-
-        config.classList.toggle('collapsed');
+        configSection?.classList.toggle('collapsed');
       });
 
-      // 开关切换事件
-      const toggle = card.querySelector('.provider-toggle');
-      toggle?.addEventListener('change', (e) => {
-        const providerId = e.target.dataset.provider;
-        this.handleProviderToggle(providerId, e.target.checked);
-      });
-
-      // 验证按钮
-      const validateBtn = card.querySelector('.btn-validate');
-      validateBtn?.addEventListener('click', () => {
-        const providerId = validateBtn.dataset.provider;
-        this.validateProvider(providerId);
-      });
-
-      // 配额按钮
-      const quotaBtn = card.querySelector('.btn-quota');
-      quotaBtn?.addEventListener('click', () => {
-        const providerId = quotaBtn.dataset.provider;
-        this.checkQuota(providerId);
-      });
-
-      // 文档按钮
-      const docsBtn = card.querySelector('.btn-docs');
-      docsBtn?.addEventListener('click', () => {
-        const providerId = docsBtn.dataset.provider;
-        const provider = this.providers.find(p => p.id === providerId);
-        if (provider?.documentation) {
-          window.open(provider.documentation, '_blank');
+      const toggle = qs<HTMLInputElement>('.provider-toggle', card);
+      toggle?.addEventListener('change', (event) => {
+        const input = event.target as HTMLInputElement;
+        const providerId = input.dataset.provider;
+        if (providerId) {
+          this.handleProviderToggle(providerId, input.checked);
         }
       });
 
-      // 显示/隐藏密码
-      const togglePasswordBtns = card.querySelectorAll('.toggle-password');
-      togglePasswordBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const input = e.target.previousElementSibling;
-          if (input.type === 'password') {
-            input.type = 'text';
-            btn.textContent = '🙈';
-          } else {
-            input.type = 'password';
-            btn.textContent = '👁️';
-          }
+      const validateBtn = qs<HTMLButtonElement>('.btn-validate', card);
+      validateBtn?.addEventListener('click', () => {
+        const providerId = validateBtn.dataset.provider;
+        if (providerId) {
+          void this.validateProvider(providerId);
+        }
+      });
+
+      const quotaBtn = qs<HTMLButtonElement>('.btn-quota', card);
+      quotaBtn?.addEventListener('click', () => {
+        const providerId = quotaBtn.dataset.provider;
+        if (providerId) {
+          void this.checkQuota(providerId);
+        }
+      });
+
+      const docsBtn = qs<HTMLButtonElement>('.btn-docs', card);
+      docsBtn?.addEventListener('click', () => {
+        const providerId = docsBtn.dataset.provider;
+        const provider = this.providers.find((item) => item.id === providerId);
+        if (provider?.documentation) {
+          window.open(provider.documentation, '_blank', 'noopener');
+        }
+      });
+
+      const togglePasswordBtns = card.querySelectorAll<HTMLButtonElement>('.toggle-password');
+      togglePasswordBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const input = btn.previousElementSibling as HTMLInputElement | null;
+          if (!input) return;
+          const isPassword = input.type === 'password';
+          input.type = isPassword ? 'text' : 'password';
+          btn.textContent = isPassword ? '🙈' : '👁️';
         });
       });
     });
   }
 
-  /**
-   * 更新主要服务下拉框
-   */
-  updatePrimaryProviderSelect() {
-    const select = document.getElementById('primaryProvider');
+  private updatePrimaryProviderSelect(): void {
+    const select = getById<HTMLSelectElement>('primaryProvider');
     if (!select) return;
 
     select.innerHTML = '<option value="">请先配置翻译服务</option>';
+    const providerConfigs = this.settings.providers || {};
 
-    // 获取已启用的提供商
-    const enabledProviders = this.providers.filter(p => 
-      this.settings.providers?.[p.id]?.enabled
+    const enabledProviders = this.providers.filter(
+      (provider) => providerConfigs[provider.id]?.enabled
     );
 
-    enabledProviders.forEach(provider => {
+    enabledProviders.forEach((provider) => {
       const option = document.createElement('option');
       option.value = provider.id;
       option.textContent = provider.displayName;
@@ -246,15 +259,12 @@ class PopupManager {
     });
   }
 
-  /**
-   * 更新备用服务列表
-   */
-  updateFallbackList() {
-    const list = document.getElementById('fallbackList');
+  private updateFallbackList(): void {
+    const list = getById<HTMLElement>('fallbackList');
     if (!list) return;
 
-    const fallbackProviders = this.settings.fallbackProviders || [];
-    
+    const fallbackProviders = this.settings.fallbackProviders ?? [];
+
     if (fallbackProviders.length === 0) {
       list.innerHTML = '<p class="empty-state">未配置备用服务</p>';
       return;
@@ -262,7 +272,7 @@ class PopupManager {
 
     list.innerHTML = '';
     fallbackProviders.forEach((providerId, index) => {
-      const provider = this.providers.find(p => p.id === providerId);
+      const provider = this.providers.find((item) => item.id === providerId);
       if (!provider) return;
 
       const item = document.createElement('div');
@@ -279,114 +289,102 @@ class PopupManager {
       list.appendChild(item);
     });
 
-    // 绑定按钮事件
     this.bindFallbackActions();
   }
 
-  /**
-   * 绑定备用服务操作
-   */
-  bindFallbackActions() {
-    const list = document.getElementById('fallbackList');
+  private bindFallbackActions(): void {
+    const list = getById<HTMLElement>('fallbackList');
     if (!list) return;
 
-    list.querySelectorAll('.btn-move-up').forEach(btn => {
+    list.querySelectorAll<HTMLButtonElement>('.btn-move-up').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const index = parseInt(btn.dataset.index);
-        this.moveFallbackProvider(index, -1);
+        const index = Number.parseInt(btn.dataset.index ?? '-1', 10);
+        if (!Number.isNaN(index)) {
+          this.moveFallbackProvider(index, -1);
+        }
       });
     });
 
-    list.querySelectorAll('.btn-move-down').forEach(btn => {
+    list.querySelectorAll<HTMLButtonElement>('.btn-move-down').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const index = parseInt(btn.dataset.index);
-        this.moveFallbackProvider(index, 1);
+        const index = Number.parseInt(btn.dataset.index ?? '-1', 10);
+        if (!Number.isNaN(index)) {
+          this.moveFallbackProvider(index, 1);
+        }
       });
     });
 
-    list.querySelectorAll('.btn-remove').forEach(btn => {
+    list.querySelectorAll<HTMLButtonElement>('.btn-remove').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const index = parseInt(btn.dataset.index);
-        this.removeFallbackProvider(index);
+        const index = Number.parseInt(btn.dataset.index ?? '-1', 10);
+        if (!Number.isNaN(index)) {
+          this.removeFallbackProvider(index);
+        }
       });
     });
   }
 
-  /**
-   * 移动备用服务位置
-   */
-  moveFallbackProvider(index, direction) {
-    const fallbacks = this.settings.fallbackProviders || [];
+  private moveFallbackProvider(index: number, direction: number): void {
+    const fallbacks = [...(this.settings.fallbackProviders ?? [])];
     const newIndex = index + direction;
 
     if (newIndex < 0 || newIndex >= fallbacks.length) return;
 
-    const temp = fallbacks[index];
-    fallbacks[index] = fallbacks[newIndex];
-    fallbacks[newIndex] = temp;
+    const [current] = fallbacks.splice(index, 1);
+    fallbacks.splice(newIndex, 0, current);
 
     this.settings.fallbackProviders = fallbacks;
     this.updateFallbackList();
   }
 
-  /**
-   * 移除备用服务
-   */
-  removeFallbackProvider(index) {
-    const fallbacks = this.settings.fallbackProviders || [];
+  private removeFallbackProvider(index: number): void {
+    const fallbacks = [...(this.settings.fallbackProviders ?? [])];
+    if (index < 0 || index >= fallbacks.length) return;
+
     fallbacks.splice(index, 1);
     this.settings.fallbackProviders = fallbacks;
     this.updateFallbackList();
   }
 
-  /**
-   * 处理提供商开关切换
-   */
-  handleProviderToggle(providerId, enabled) {
+  private handleProviderToggle(providerId: string, enabled: boolean): void {
     if (!this.settings.providers) {
       this.settings.providers = {};
     }
     if (!this.settings.providers[providerId]) {
-      this.settings.providers[providerId] = {};
+      this.settings.providers[providerId] = { enabled };
+    } else {
+      this.settings.providers[providerId].enabled = enabled;
     }
 
-    this.settings.providers[providerId].enabled = enabled;
-
-    // 如果禁用了主要服务，需要切换
     if (!enabled && this.settings.primaryProvider === providerId) {
       const enabledProviders = Object.entries(this.settings.providers)
-        .filter(([_id, config]) => config.enabled)
-        .map(([provider]) => provider);
-      
-      this.settings.primaryProvider = enabledProviders[0] || '';
+        .filter(([, config]) => config.enabled)
+        .map(([id]) => id);
+      this.settings.primaryProvider = enabledProviders[0] ?? '';
     }
 
     this.updatePrimaryProviderSelect();
     this.updateFallbackList();
   }
 
-  /**
-   * 验证提供商配置
-   */
-  async validateProvider(providerId) {
-    const statusEl = document.querySelector(`.validation-status[data-provider="${providerId}"]`);
+  private async validateProvider(providerId: string): Promise<void> {
+    const statusEl = document.querySelector<HTMLElement>(
+      `.validation-status[data-provider="${providerId}"]`
+    );
     if (!statusEl) return;
 
     statusEl.textContent = '验证中...';
     statusEl.className = 'validation-status validating';
 
     try {
-      // 收集配置
       const config = this.collectProviderConfig(providerId);
-
-      // 调用后台服务验证
-      const response = await chrome.runtime.sendMessage({
+      const response = await sendRuntimeMessage<RuntimeResponse<{ valid: boolean }>>({
         action: 'validateProvider',
-        providerId: providerId,
-        config: config,
+        providerId,
+        config
       });
 
-      if (response.success && response.data.valid) {
+      if (response.success && response.data?.valid) {
         statusEl.textContent = '✓ 验证成功';
         statusEl.className = 'validation-status success';
       } else {
@@ -400,165 +398,228 @@ class PopupManager {
     }
   }
 
-  /**
-   * 检查配额
-   */
-  async checkQuota(providerId) {
+  private async checkQuota(providerId: string): Promise<void> {
     try {
-      const response = await chrome.runtime.sendMessage({
+      const response = await sendRuntimeMessage<RuntimeResponse<{ used: number; limit: number } | null>>({
         action: 'getQuota',
-        providerId: providerId,
+        providerId
       });
 
       if (response.success && response.data) {
         const quota = response.data;
-        const percent = ((quota.used / quota.limit) * 100).toFixed(1);
+        const percent = quota.limit > 0 ? ((quota.used / quota.limit) * 100).toFixed(1) : '0';
+        // eslint-disable-next-line no-alert
         alert(`配额使用情况:\n已使用: ${quota.used}\n总限额: ${quota.limit}\n使用率: ${percent}%`);
       } else {
+        // eslint-disable-next-line no-alert
         alert('该服务不支持配额查询');
       }
     } catch (error) {
       console.error('查询配额失败:', error);
+      // eslint-disable-next-line no-alert
       alert('查询配额失败');
     }
   }
 
-  /**
-   * 收集提供商配置
-   */
-  collectProviderConfig(providerId) {
-    const card = document.querySelector(`.provider-card[data-provider="${providerId}"]`);
+  private collectProviderConfig(providerId: string): Partial<ProviderInstanceConfig> {
+    const card = document.querySelector<HTMLElement>(`.provider-card[data-provider="${providerId}"]`);
     if (!card) return {};
 
-    const config = {};
-    
-    // API Key
-    const apiKeyInput = card.querySelector('.api-key');
+    const config: Partial<ProviderInstanceConfig> = {};
+
+    const apiKeyInput = qs<HTMLInputElement>('.api-key', card);
     if (apiKeyInput) {
       config.apiKey = apiKeyInput.value.trim();
     }
 
-    // 其他字段
-    const inputs = card.querySelectorAll('[data-field]');
-    inputs.forEach(input => {
-      const field = input.dataset.field;
+    const inputs = card.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-field]');
+    inputs.forEach((input) => {
+      const field = input.getAttribute('data-field');
+      if (!field) return;
       config[field] = input.value.trim();
     });
 
     return config;
   }
 
-  /**
-   * 加载设置到 UI
-   */
-  loadSettingsToUI() {
-    // 加载基础设置
-    document.getElementById('targetLanguage').value = this.settings.targetLanguage || 'zh-CN';
-    document.getElementById('sourceLanguage').value = this.settings.sourceLanguage || 'auto';
-    document.getElementById('enableCache').checked = this.settings.enableCache !== false;
-    document.getElementById('autoDetect').checked = this.settings.autoDetect !== false;
-    document.getElementById('showOriginal').checked = this.settings.showOriginal !== false;
-
-    // 加载高级设置
-    if (this.settings.formality) {
-      document.querySelector(`input[name="formality"][value="${this.settings.formality}"]`).checked = true;
+  private loadSettingsToUI(): void {
+    const targetSelect = getById<HTMLSelectElement>('targetLanguage');
+    if (targetSelect) {
+      targetSelect.value = this.settings.targetLanguage || 'zh-CN';
     }
-    document.getElementById('domain').value = this.settings.domain || 'general';
-    document.getElementById('timeout').value = this.settings.timeout || 30;
-    document.getElementById('retryCount').value = this.settings.retryCount || 3;
-    document.getElementById('parallelTranslation').checked = this.settings.parallelTranslation || false;
-    document.getElementById('autoFallback').checked = this.settings.autoFallback !== false;
 
-    // 加载提供商配置
+    const sourceSelect = getById<HTMLSelectElement>('sourceLanguage');
+    if (sourceSelect) {
+      sourceSelect.value = this.settings.sourceLanguage || 'auto';
+    }
+
+    const enableCache = getById<HTMLInputElement>('enableCache');
+    if (enableCache) {
+      enableCache.checked = this.settings.enableCache !== false;
+    }
+
+    const autoDetect = getById<HTMLInputElement>('autoDetect');
+    if (autoDetect) {
+      autoDetect.checked = this.settings.autoDetect !== false;
+    }
+
+    const showOriginal = getById<HTMLInputElement>('showOriginal');
+    if (showOriginal) {
+      showOriginal.checked = this.settings.showOriginal !== false;
+    }
+
+    if (this.settings.formality) {
+      const formalityRadio = document.querySelector<HTMLInputElement>(
+        `input[name="formality"][value="${this.settings.formality}"]`
+      );
+      if (formalityRadio) {
+        formalityRadio.checked = true;
+      }
+    }
+
+    const domainSelect = getById<HTMLSelectElement>('domain');
+    if (domainSelect) {
+      domainSelect.value = this.settings.domain || 'general';
+    }
+
+    const timeoutInput = getById<HTMLInputElement>('timeout');
+    if (timeoutInput) {
+      timeoutInput.value = String(Math.floor((this.settings.timeout ?? 30_000) / 1000));
+    }
+
+    const retryInput = getById<HTMLInputElement>('retryCount');
+    if (retryInput) {
+      retryInput.value = String(this.settings.retryCount ?? 3);
+    }
+
+    const parallelToggle = getById<HTMLInputElement>('parallelTranslation');
+    if (parallelToggle) {
+      parallelToggle.checked = this.settings.parallelTranslation ?? false;
+    }
+
+    const autoFallbackToggle = getById<HTMLInputElement>('autoFallback');
+    if (autoFallbackToggle) {
+      autoFallbackToggle.checked = this.settings.autoFallback !== false;
+    }
+
     if (this.settings.providers) {
       Object.entries(this.settings.providers).forEach(([providerId, config]) => {
-        const toggle = document.querySelector(`.provider-toggle[data-provider="${providerId}"]`);
+        const toggle = document.querySelector<HTMLInputElement>(
+          `.provider-toggle[data-provider="${providerId}"]`
+        );
         if (toggle) {
-          toggle.checked = config.enabled || false;
+          toggle.checked = config.enabled ?? false;
         }
 
-        const card = document.querySelector(`.provider-card[data-provider="${providerId}"]`);
+        const card = document.querySelector<HTMLElement>(
+          `.provider-card[data-provider="${providerId}"]`
+        );
         if (!card) return;
 
-        // 加载 API Key
-        const apiKeyInput = card.querySelector('.api-key');
-        if (apiKeyInput && config.apiKey) {
+        const apiKeyInput = qs<HTMLInputElement>('.api-key', card);
+        if (apiKeyInput && typeof config.apiKey === 'string') {
           apiKeyInput.value = config.apiKey;
         }
 
-        // 加载其他字段
-        if (config.appId) {
-          const appIdInput = card.querySelector('[data-field="appId"]');
-          if (appIdInput) appIdInput.value = config.appId;
-        }
-        if (config.secret) {
-          const secretInput = card.querySelector('[data-field="secret"]');
-          if (secretInput) secretInput.value = config.secret;
-        }
-        if (config.region) {
-          const regionSelect = card.querySelector('[data-field="region"]');
-          if (regionSelect) regionSelect.value = config.region;
-        }
-        if (config.model) {
-          const modelSelect = card.querySelector('[data-field="model"]');
-          if (modelSelect) modelSelect.value = config.model;
-        }
+        const inputs = card.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-field]');
+        inputs.forEach((input) => {
+          const field = input.getAttribute('data-field');
+          if (!field) return;
+          const value = config[field];
+          if (typeof value === 'string') {
+            input.value = value;
+          }
+        });
       });
     }
   }
 
-  /**
-   * 从 UI 收集设置
-   */
-  collectSettings() {
-    const settings = {};
+  private collectSettings(): TranslationSettings {
+    const defaults = ConfigManager.getDefaults();
+    const current = this.settings;
+    const settings: TranslationSettings = {
+      ...defaults,
+      ...current,
+      fallbackProviders: [...(current.fallbackProviders ?? [])],
+      providers: {}
+    };
 
-    // 基础设置
-    settings.targetLanguage = document.getElementById('targetLanguage').value;
-    settings.sourceLanguage = document.getElementById('sourceLanguage').value;
-    settings.enableCache = document.getElementById('enableCache').checked;
-    settings.autoDetect = document.getElementById('autoDetect').checked;
-    settings.showOriginal = document.getElementById('showOriginal').checked;
+    const targetSelect = getById<HTMLSelectElement>('targetLanguage');
+    if (targetSelect) {
+      settings.targetLanguage = targetSelect.value as TranslationSettings['targetLanguage'];
+    }
 
-    // 高级设置
-    settings.formality = document.querySelector('input[name="formality"]:checked').value;
-    settings.domain = document.getElementById('domain').value;
-    settings.timeout = parseInt(document.getElementById('timeout').value) * 1000;
-    settings.retryCount = parseInt(document.getElementById('retryCount').value);
-    settings.parallelTranslation = document.getElementById('parallelTranslation').checked;
-    settings.autoFallback = document.getElementById('autoFallback').checked;
+    const sourceSelect = getById<HTMLSelectElement>('sourceLanguage');
+    if (sourceSelect) {
+      settings.sourceLanguage = sourceSelect.value as TranslationSettings['sourceLanguage'];
+    }
 
-    // 主要服务
-    settings.primaryProvider = document.getElementById('primaryProvider').value;
+    const enableCache = getById<HTMLInputElement>('enableCache');
+    settings.enableCache = enableCache ? enableCache.checked : settings.enableCache;
 
-    // 备用服务
-    settings.fallbackProviders = this.settings.fallbackProviders || [];
+    const autoDetect = getById<HTMLInputElement>('autoDetect');
+    settings.autoDetect = autoDetect ? autoDetect.checked : settings.autoDetect;
 
-    // 提供商配置
-    settings.providers = {};
-    const cards = document.querySelectorAll('.provider-card');
-    
-    cards.forEach(card => {
+    const showOriginal = getById<HTMLInputElement>('showOriginal');
+    settings.showOriginal = showOriginal ? showOriginal.checked : settings.showOriginal;
+
+    const formalityRadio = document.querySelector<HTMLInputElement>('input[name="formality"]:checked');
+    if (formalityRadio) {
+      settings.formality = formalityRadio.value;
+    }
+
+    const domainSelect = getById<HTMLSelectElement>('domain');
+    if (domainSelect) {
+      settings.domain = domainSelect.value;
+    }
+
+    const timeoutInput = getById<HTMLInputElement>('timeout');
+    if (timeoutInput) {
+      const seconds = Number.parseInt(timeoutInput.value, 10);
+      settings.timeout = Number.isFinite(seconds) ? seconds * 1000 : settings.timeout;
+    }
+
+    const retryInput = getById<HTMLInputElement>('retryCount');
+    if (retryInput) {
+      const retry = Number.parseInt(retryInput.value, 10);
+      settings.retryCount = Number.isFinite(retry) ? retry : settings.retryCount;
+    }
+
+    const parallelToggle = getById<HTMLInputElement>('parallelTranslation');
+    settings.parallelTranslation = parallelToggle ? parallelToggle.checked : settings.parallelTranslation;
+
+    const autoFallbackToggle = getById<HTMLInputElement>('autoFallback');
+    settings.autoFallback = autoFallbackToggle ? autoFallbackToggle.checked : settings.autoFallback;
+
+    const primarySelect = getById<HTMLSelectElement>('primaryProvider');
+    settings.primaryProvider = primarySelect ? primarySelect.value : settings.primaryProvider;
+
+    const providerConfigs: ProviderConfigMap = {};
+    const cards = document.querySelectorAll<HTMLElement>('.provider-card');
+    cards.forEach((card) => {
       const providerId = card.dataset.provider;
-      const toggle = card.querySelector('.provider-toggle');
-      
-      settings.providers[providerId] = {
-        enabled: toggle?.checked || false,
-        ...this.collectProviderConfig(providerId),
+      if (!providerId) return;
+
+      const toggle = qs<HTMLInputElement>('.provider-toggle', card);
+      const config = this.collectProviderConfig(providerId);
+      providerConfigs[providerId] = {
+        ...(current.providers?.[providerId] ?? {}),
+        ...config,
+        enabled: toggle?.checked ?? false
       };
     });
 
+    settings.providers = providerConfigs;
     return settings;
   }
 
-  /**
-   * 加载统计信息
-   */
-  async loadStats() {
+  private async loadStats(): Promise<void> {
     try {
-      const response = await chrome.runtime.sendMessage({ action: 'getTranslationStats' });
-      
-      if (response.success) {
+      const response = await sendRuntimeMessage<RuntimeResponse<PopupStats>>({
+        action: 'getTranslationStats'
+      });
+
+      if (response.success && response.data) {
         this.stats = response.data;
         this.updateStatsUI();
       }
@@ -567,53 +628,42 @@ class PopupManager {
     }
   }
 
-  /**
-   * 更新统计 UI
-   */
-  updateStatsUI() {
+  private updateStatsUI(): void {
     if (!this.stats) return;
 
-    // 总体统计
-    document.getElementById('totalRequests').textContent = this.stats.total.requests || 0;
-    document.getElementById('totalCharacters').textContent = this.stats.total.characters || 0;
-    document.getElementById('totalCost').textContent = '$' + (this.stats.total.cost || 0).toFixed(4);
-    
-    const successRate = this.stats.total.requests > 0
-      ? ((this.stats.total.successes / this.stats.total.requests) * 100).toFixed(1)
-      : 0;
-    document.getElementById('successRate').textContent = successRate + '%';
+    const { total, today, cache, byProvider } = this.stats;
 
-    // 今日统计
-    document.getElementById('todayRequests').textContent = this.stats.today.requests || 0;
-    document.getElementById('todayCharacters').textContent = this.stats.today.characters || 0;
-    document.getElementById('todayCost').textContent = '$' + (this.stats.today.cost || 0).toFixed(4);
+    setText('totalRequests', total.requests ?? 0);
+    setText('totalCharacters', total.characters ?? 0);
+    setText('totalCost', `$${(total.cost ?? 0).toFixed(4)}`);
 
-    // 缓存统计
-    const cacheStats = this.stats.cache || {};
-    document.getElementById('cacheSize').textContent = cacheStats.size || 0;
-    document.getElementById('cacheUsage').textContent = cacheStats.usage || '0%';
+    const successRate =
+      total.requests > 0 ? ((total.successes / total.requests) * 100).toFixed(1) : '0.0';
+    setText('successRate', `${successRate}%`);
 
-    // 各提供商统计
-    this.updateProviderStats();
+    setText('todayRequests', today.requests ?? 0);
+    setText('todayCharacters', today.characters ?? 0);
+    setText('todayCost', `$${(today.cost ?? 0).toFixed(4)}`);
+
+    setText('cacheSize', cache?.size ?? 0);
+    setText('cacheUsage', cache?.usage ?? '0%');
+
+    this.updateProviderStats(byProvider ?? {});
   }
 
-  /**
-   * 更新提供商统计
-   */
-  updateProviderStats() {
-    const list = document.getElementById('providerStatsList');
-    if (!list || !this.stats?.byProvider) return;
+  private updateProviderStats(providerStats: PopupStats['byProvider']): void {
+    const list = getById<HTMLElement>('providerStatsList');
+    if (!list) return;
 
-    const providerStats = Object.entries(this.stats.byProvider);
-    
-    if (providerStats.length === 0) {
+    const entries = Object.entries(providerStats);
+    if (entries.length === 0) {
       list.innerHTML = '<p class="empty-state">暂无统计数据</p>';
       return;
     }
 
     list.innerHTML = '';
-    providerStats.forEach(([providerId, stats]) => {
-      const provider = this.providers.find(p => p.id === providerId);
+    entries.forEach(([providerId, stats]) => {
+      const provider = this.providers.find((item) => item.id === providerId);
       if (!provider) return;
 
       const item = document.createElement('div');
@@ -634,80 +684,89 @@ class PopupManager {
     });
   }
 
-  /**
-   * 绑定事件
-   */
-  bindEvents() {
-    // 保存设置
-    document.getElementById('saveSettings')?.addEventListener('click', async () => {
-      this.settings = this.collectSettings();
+  private bindEvents(): void {
+    getById<HTMLButtonElement>('saveSettings')?.addEventListener('click', async () => {
+      const nextSettings = this.collectSettings();
+      this.settings = nextSettings;
       await this.saveSettings();
-      
-      // 通知后台更新配置
-      await chrome.runtime.sendMessage({
-        action: 'updateTranslationConfig',
-        settings: this.settings,
-      });
-    });
 
-    // 重置设置
-    document.getElementById('resetSettings')?.addEventListener('click', () => {
-      if (confirm('确定要重置所有设置吗？')) {
-        this.settings = {};
-        this.loadSettingsToUI();
+      try {
+        await sendRuntimeMessage<RuntimeResponse<unknown>>({
+          action: 'updateTranslationConfig',
+          settings: this.settings
+        });
+      } catch (error) {
+        console.error('更新后台配置失败:', error);
+        this.showError('更新后台配置失败，请检查后台页面日志');
       }
     });
 
-    // 主要服务选择
-    document.getElementById('primaryProvider')?.addEventListener('change', (e) => {
-      this.settings.primaryProvider = e.target.value;
+    getById<HTMLButtonElement>('resetSettings')?.addEventListener('click', () => {
+      // eslint-disable-next-line no-alert
+      if (confirm('确定要重置所有设置吗？')) {
+        this.settings = ConfigManager.getDefaults();
+        this.loadSettingsToUI();
+        this.updatePrimaryProviderSelect();
+        this.updateFallbackList();
+      }
     });
 
-    // 清空缓存
-    document.getElementById('clearCache')?.addEventListener('click', async () => {
-      await chrome.runtime.sendMessage({ action: 'clearCache' });
-      this.showSuccess('缓存已清空');
-      await this.loadStats();
+    getById<HTMLSelectElement>('primaryProvider')?.addEventListener('change', (event) => {
+      const select = event.target as HTMLSelectElement;
+      this.settings.primaryProvider = select.value;
     });
 
-    // 清空统计
-    document.getElementById('clearStats')?.addEventListener('click', async () => {
-      if (confirm('确定要清空所有统计数据吗？')) {
-        await chrome.runtime.sendMessage({ action: 'clearStats' });
+    getById<HTMLButtonElement>('clearCache')?.addEventListener('click', async () => {
+      try {
+        await sendRuntimeMessage<RuntimeResponse<unknown>>({ action: 'clearCache' });
+        this.showSuccess('缓存已清空');
+        await this.loadStats();
+      } catch (error) {
+        console.error('清空缓存失败:', error);
+        this.showError('清空缓存失败');
+      }
+    });
+
+    getById<HTMLButtonElement>('clearStats')?.addEventListener('click', async () => {
+      // eslint-disable-next-line no-alert
+      if (!confirm('确定要清空所有统计数据吗？')) {
+        return;
+      }
+      try {
+        await sendRuntimeMessage<RuntimeResponse<unknown>>({ action: 'clearStats' });
         this.showSuccess('统计已清空');
         await this.loadStats();
+      } catch (error) {
+        console.error('清空统计失败:', error);
+        this.showError('清空统计失败');
       }
     });
 
-    // 导出统计
-    document.getElementById('exportStats')?.addEventListener('click', () => {
+    getById<HTMLButtonElement>('exportStats')?.addEventListener('click', () => {
+      if (!this.stats) return;
       const data = JSON.stringify(this.stats, null, 2);
       const blob = new Blob([data], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `translation-stats-${new Date().toISOString()}.json`;
-      a.click();
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `translation-stats-${new Date().toISOString()}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
     });
   }
 
-  /**
-   * 显示成功消息
-   */
-  showSuccess(message) {
-    // 简单的提示实现
+  private showSuccess(message: string): void {
+    // eslint-disable-next-line no-alert
     alert(message);
   }
 
-  /**
-   * 显示错误消息
-   */
-  showError(message) {
-    alert('错误: ' + message);
+  private showError(message: string): void {
+    // eslint-disable-next-line no-alert
+    alert(`错误: ${message}`);
   }
 }
 
-// 初始化
 document.addEventListener('DOMContentLoaded', () => {
+  // eslint-disable-next-line no-new
   new PopupManager();
 });

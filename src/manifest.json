@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Hover Translation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "智能悬停翻译插件 - 选中即翻译，优雅无干扰",
   "permissions": [
     "storage",
@@ -10,6 +10,15 @@
   "host_permissions": [
     "https://translation.googleapis.com/*",
     "https://fanyi-api.baidu.com/*",
+    "https://api-free.deepl.com/*",
+    "https://api.deepl.com/*",
+    "https://api.cognitive.microsofttranslator.com/*",
+    "https://*.cognitive.microsofttranslator.com/*",
+    "https://openapi.youdao.com/*",
+    "https://tmt.tencentcloudapi.com/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
+    "https://generativelanguage.googleapis.com/*",
     "https://api.dictionaryapi.dev/*"
   ],
   "content_scripts": [

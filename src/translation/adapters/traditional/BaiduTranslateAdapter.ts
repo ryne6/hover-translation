@@ -1,6 +1,6 @@
 import { BaseTranslationAdapter } from '../base/BaseTranslationAdapter';
 import { COMMON_LANGUAGES } from '../../utils/language-codes';
-import { md5 } from '../../utils/crypto';
+import { md5, randomHex } from '../../utils/crypto';
 import type { TranslationRequest, TranslationResponse, ValidationResult } from '../../interfaces/types';
 
 /**
@@ -38,7 +38,7 @@ export class BaiduTranslateAdapter extends BaseTranslationAdapter {
   /**
    * 生成签名
    */
-  generateSign(query: string, salt: number): string {
+  generateSign(query: string, salt: string): string {
     const appid = this.config.apiKey ?? '';
     const key = this.config.apiSecret ?? '';
     const str = appid + query + salt + key;
@@ -46,7 +46,7 @@ export class BaiduTranslateAdapter extends BaseTranslationAdapter {
   }
 
   async translate(request: TranslationRequest): Promise<TranslationResponse> {
-    const salt = Date.now();
+    const salt = randomHex(16);
     const sign = this.generateSign(request.text, salt);
 
     const params = {
@@ -85,7 +85,7 @@ export class BaiduTranslateAdapter extends BaseTranslationAdapter {
   }
 
   async detectLanguage(text: string) {
-    const salt = Date.now();
+    const salt = randomHex(16);
     const sign = this.generateSign(text, salt);
 
     const params = {

@@ -1,6 +1,6 @@
 import { BaseTranslationAdapter } from '../base/BaseTranslationAdapter';
 import { COMMON_LANGUAGES } from '../../utils/language-codes';
-import { sha256 } from '../../utils/crypto';
+import { randomHex, sha256 } from '../../utils/crypto';
 import type { TranslationRequest, TranslationResponse, ValidationResult } from '../../interfaces/types';
 
 /**
@@ -62,7 +62,7 @@ export class YoudaoTranslateAdapter extends BaseTranslationAdapter {
   }
 
   async translate(request: TranslationRequest): Promise<TranslationResponse> {
-    const salt = Date.now().toString();
+    const salt = randomHex(16);
     const curtime = Math.floor(Date.now() / 1000).toString();
 
     const params: Record<string, string> = {

@@ -491,12 +491,12 @@ export class HoverBox {
     }
   }
 
-  async handleAccentPronounce(accent: string, word: string, button?: HTMLButtonElement | null): Promise<void> {
+  handleAccentPronounce(accent: string, word: string, button?: HTMLButtonElement | null): void {
     const normalized = word.toLowerCase();
     if (!normalized) return;
 
-    const info = await this.fetchPronunciation(normalized);
-    if (!info.entries || info.entries.length === 0) {
+    const info = this.pronunciationCache.get(normalized);
+    if (!info || !info.entries || info.entries.length === 0) {
       showNotification('暂无可用的发音音频', 'warning');
       return;
     }
@@ -511,27 +511,38 @@ export class HoverBox {
       return;
     }
 
+    this.playPronunciationEntry(accent, word, targetEntry, button);
+  }
+
+  private playPronunciationEntry(
+    accent: string,
+    word: string,
+    entry: PronunciationEntry,
+    button?: HTMLButtonElement | null
+  ): void {
     this.stopPronunciationAudio();
-    this.setButtonSpeaking(button || this.pronunciationButtons.get(accent), true);
+    const targetButton = button || this.pronunciationButtons.get(accent);
+    this.setButtonSpeaking(targetButton, true);
 
     const finish = () => {
-      this.setButtonSpeaking(button || this.pronunciationButtons.get(accent), false);
+      this.setButtonSpeaking(targetButton, false);
       delete this.audioPlayers[accent];
     };
 
     const fallback = () => {
       const { locale } = getAccentConfig(accent);
       this.speakWithSpeechSynthesis(locale, word, {
-        button: button || this.pronunciationButtons.get(accent),
+        button: targetButton,
         onEnd: finish,
         onError: finish,
       });
     };
 
-    if (targetEntry.audioUrl && typeof Audio === 'function') {
+    if (entry.audioUrl && typeof Audio === 'function') {
       try {
-        const audio = new Audio(targetEntry.audioUrl);
+        const audio = new Audio();
         audio.crossOrigin = 'anonymous';
+        audio.src = entry.audioUrl;
         audio.onended = finish;
         audio.onerror = (event) => {
           const message =

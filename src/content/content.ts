@@ -55,6 +55,8 @@ class HoverTranslation {
 
   private isEnabled: boolean;
 
+  private translationRequestToken: symbol | null;
+
   private readonly handleTextSelectedListener = (event: Event): void => {
     const customEvent = event as CustomEvent<SelectionEventDetail>;
     if (!customEvent.detail) {
@@ -80,6 +82,7 @@ class HoverTranslation {
     this.storageManager = new StorageManager();
     this.settings = null;
     this.isEnabled = true;
+    this.translationRequestToken = null;
 
     void this.init();
   }
@@ -139,6 +142,9 @@ class HoverTranslation {
 
     const provider = settings.primaryProvider || 'Google';
 
+    const requestId = Symbol('translation');
+    this.translationRequestToken = requestId;
+
     const loadingState: HoverBoxTranslationData = {
       original: text,
       translated: '翻译中...',
@@ -157,6 +163,10 @@ class HoverTranslation {
         sourceLang,
         targetLang
       });
+
+      if (this.translationRequestToken !== requestId) {
+        return;
+      }
 
       if (!response?.success || !response.data) {
         this.showTranslationError(text, response?.error ?? '未知错误');
@@ -183,16 +193,23 @@ class HoverTranslation {
         targetLang
       });
     } catch (error) {
+      if (this.translationRequestToken !== requestId) {
+        return;
+      }
       console.error('翻译失败:', error);
       const message = error instanceof Error ? error.message : String(error);
       this.showTranslationError(text, message);
     } finally {
-      this.hoverBox.hideLoading();
+      if (this.translationRequestToken === requestId) {
+        this.hoverBox.hideLoading();
+      }
     }
   }
 
   private handleSelectionCleared(): void {
+    this.translationRequestToken = null;
     this.hoverBox.hide();
+    this.hoverBox.hideLoading();
   }
 
   private showTranslationError(text: string, errorMessage: string): void {
