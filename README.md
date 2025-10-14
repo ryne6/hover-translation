@@ -13,3 +13,22 @@
 [功能特性](#-功能特性) • [快速开始](#-快速开始) • [支持的服务](#-支持的翻译服务) • [文档](#-文档)
 
 </div>
+
+## 快速开始
+
+```bash
+git clone <repo-url>
+cd hover-translation
+npm install
+npm run lint
+npm run type-check
+npm test
+npm run build
+```
+
+## 开发脚本
+
+- `npm run lint`：ESLint + TypeScript 规则检查
+- `npm run type-check`：独立类型检查（无输出）
+- `npm test`：Vitest 单元测试
+- `npm run build`：Vite 生产打包

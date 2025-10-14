@@ -37,6 +37,9 @@
 - DOM 交互：缓存节点引用、清理事件监听器。
 - 配置/常量存放在 `src/shared/constants.js` 或专有模块。
 - 日志：内容脚本与后台使用 `console` / `Logger`，带上模块前缀。
+- 全仓库使用 TypeScript；新增文件需声明类字段类型，优先使用接口而非 `any`。
+- DOM 交互：使用 `querySelectorAll<HTMLElement>()`、`as HTMLInputElement` 缩小断言范围。
+- 网络请求：为返回结果声明接口（如 `OpenAIChatResponse`），调用 `makeRequest<T>()` 时传入泛型。
 - 单元测试：
   - 使用 Vitest + jsdom。
   - Mock Chrome API / Speech API / Audio 等浏览器对象。
@@ -109,11 +112,12 @@
 
 ## 6. 发布流程
 
-1. `npm run build`（生成 `dist/*`）。
-2. 进入 Chrome → `chrome://extensions/` → 打包好的 `dist/` 目录 → 加载待发布版本。
-3. 手动走“测试策略”中的关键场景。
-4. 更新 `RELEASE_NOTES`、`CHANGELOG`（版本号、主要变更、已知问题）。
-5. 归档构建产物（如 `hover-translation.zip`）。
+1. `npm run type-check`，`npm run lint` 与 `npm test` 全部通过。
+2. `npm run build`（生成 `dist/*`）。
+3. 进入 Chrome → `chrome://extensions/` → 打包好的 `dist/` 目录 → 加载待发布版本。
+4. 手动走“测试策略”中的关键场景。
+5. 更新 `RELEASE_NOTES`、`CHANGELOG`（版本号、主要变更、已知问题）。
+6. 归档构建产物（如 `hover-translation.zip`）。
 
 ---
 
