@@ -188,11 +188,6 @@ export class HoverBox {
           <button class="btn-icon copy-btn" title="复制翻译" aria-label="复制翻译结果">
             <span class="btn-icon__icon" style="--icon-url: url('${copyIcon}')"></span>
           </button>
-          <button class="btn-icon close-btn" title="关闭" aria-label="关闭翻译框">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-          </button>
         </div>
       </div>
       <div class="translation-content">
