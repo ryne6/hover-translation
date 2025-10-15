@@ -172,6 +172,8 @@ export class HoverBox {
   }
 
   getTemplate(): string {
+    const soundIcon = this.getIconUrl('horn.svg');
+    const copyIcon = this.getIconUrl('copy.svg');
     return `
       <div class="translation-header">
         <div class="language-indicator">
@@ -181,14 +183,10 @@ export class HoverBox {
         </div>
         <div class="action-buttons">
           <button class="btn-icon sound-btn" title="朗读原文" aria-label="朗读原文" aria-pressed="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M3 10v4h3l4 4V6L6 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-            </svg>
+            <span class="btn-icon__icon" style="--icon-url: url('${soundIcon}')"></span>
           </button>
           <button class="btn-icon copy-btn" title="复制翻译" aria-label="复制翻译结果">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-            </svg>
+            <span class="btn-icon__icon" style="--icon-url: url('${copyIcon}')"></span>
           </button>
           <button class="btn-icon close-btn" title="关闭" aria-label="关闭翻译框">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -218,6 +216,13 @@ export class HoverBox {
         </div>
       </div>
     `;
+  }
+
+  private getIconUrl(filename: string): string {
+    if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) {
+      return chrome.runtime.getURL(`assets/icons/${filename}`);
+    }
+    return `/assets/icons/${filename}`;
   }
 
   addEventListeners(): void {

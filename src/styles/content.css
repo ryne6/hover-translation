@@ -148,6 +148,15 @@
   outline: none;
 }
 
+.btn-icon__icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  background-color: currentColor;
+  mask: var(--icon-url) center / contain no-repeat;
+  -webkit-mask: var(--icon-url) center / contain no-repeat;
+}
+
 .btn-icon:hover {
   background: var(--button-hover-bg);
   color: var(--primary-color);
