@@ -28,14 +28,16 @@
   "author": "Hover Translation Team",
   "license": "MIT",
   "devDependencies": {
-    "@vitest/ui": "^1.6.1",
     "@types/chrome": "^0.0.258",
     "@types/jsdom": "^21.1.6",
     "@types/node": "^20.11.30",
+    "@types/node-fetch": "^2.6.13",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "@vitest/ui": "^1.6.1",
     "eslint": "^8.52.0",
     "jsdom": "^23.2.0",
+    "node-fetch": "^3.3.2",
     "prettier": "^3.0.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
@@ -43,6 +45,7 @@
     "vitest": "^1.6.1"
   },
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "dotenv": "^17.2.3"
   }
 }

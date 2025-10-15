@@ -14,6 +14,8 @@ import { TencentTranslateAdapter } from '../translation/adapters/traditional/Ten
 import { OpenAIAdapter } from '../translation/adapters/ai/OpenAIAdapter';
 import { ClaudeAdapter } from '../translation/adapters/ai/ClaudeAdapter';
 import { GeminiAdapter } from '../translation/adapters/ai/GeminiAdapter';
+import { TTSManager } from '../tts/TTSManager';
+import type { TTSSynthesisRequest, TTSSynthesisResponse } from '../tts/interfaces';
 
 import type {
   TranslationManagerConfig,
@@ -41,6 +43,8 @@ const ADAPTER_MAP: Record<string, new () => BaseTranslationAdapter> = {
 export class APIManager {
   private translationManager: TranslationManager | null = null;
 
+  private ttsManager: TTSManager | null = null;
+
   private initialized = false;
 
   async initialize(settings: TranslationSettings): Promise<void> {
@@ -65,6 +69,8 @@ export class APIManager {
       this.translationManager = new TranslationManager();
       await this.translationManager.initialize(config);
 
+      this.ttsManager = new TTSManager(settings);
+
       const providerCount = this.translationManager.getAvailableProviders().length;
       this.initialized = true;
       Logger.success('APIManager', `Initialized with ${providerCount} providers`);
@@ -82,6 +88,13 @@ export class APIManager {
       throw new Error('Translation service not configured. Please configure at least one translation service.');
     }
     return this.translationManager;
+  }
+
+  private getTTSManager(): TTSManager {
+    if (!this.ttsManager) {
+      throw new Error('语音合成服务未初始化');
+    }
+    return this.ttsManager;
   }
 
   async translate(text: string, sourceLang: string = 'auto', targetLang: string = 'zh-CN'): Promise<TranslationResponse> {
@@ -214,6 +227,72 @@ export class APIManager {
     if (this.initialized && this.translationManager) {
       this.translationManager.clearStats();
       Logger.success('APIManager', 'Stats cleared');
+    }
+  }
+
+  isTTSEnabled(): boolean {
+    try {
+      return this.getTTSManager().isEnabled();
+    } catch (error) {
+      return false;
+    }
+  }
+
+  getSpeechSettings() {
+    try {
+      return this.getTTSManager().getSpeechSettings();
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async synthesizeSpeech(text: string, options: Partial<TTSSynthesisRequest> = {}): Promise<TTSSynthesisResponse> {
+    const manager = this.getTTSManager();
+
+    if (!manager.isEnabled()) {
+      throw new Error('语音合成服务未启用');
+    }
+
+    Logger.log('APIManager', 'Synthesize speech request', {
+      text: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
+      voice: options.voiceName
+    });
+
+    const startTime = Date.now();
+    
+    try {
+      const response = await manager.synthesize({
+        text,
+        ...options
+      });
+
+      const responseTime = Date.now() - startTime;
+      
+      // 记录 TTS 成功统计
+      if (this.translationManager) {
+        const statsManager = (this.translationManager as any).statsManager;
+        if (statsManager && typeof statsManager.recordTTSSuccess === 'function') {
+          await statsManager.recordTTSSuccess(text, responseTime);
+        }
+      }
+
+      Logger.success('APIManager', 'Speech synthesis completed', {
+        provider: response.provider,
+        responseTime: `${responseTime}ms`
+      });
+
+      return response;
+    } catch (error) {
+      // 记录 TTS 失败统计
+      if (this.translationManager) {
+        const statsManager = (this.translationManager as any).statsManager;
+        if (statsManager && typeof statsManager.recordTTSFailure === 'function') {
+          await statsManager.recordTTSFailure(error as Error);
+        }
+      }
+
+      Logger.error('APIManager', 'Speech synthesis failed', error);
+      throw error;
     }
   }
 }

@@ -10,11 +10,22 @@ interface ProviderStatsExtended extends ProviderStats {
   responseTimes: number[];
 }
 
+interface TTSStats {
+  requests: number;
+  successes: number;
+  failures: number;
+  characters: number;
+  averageResponseTime: number;
+  responseTimes: number[];
+  errors: Array<{ message: string; timestamp: number }>;
+}
+
 interface StatsState {
   byProvider: Map<string, ProviderStatsExtended>;
   total: StatsSnapshot['total'];
   today: StatsSnapshot['today'];
   lastReset: string;
+  tts: TTSStats;
 }
 
 export class StatsManager {
@@ -35,7 +46,16 @@ export class StatsManager {
         characters: 0,
         cost: 0
       },
-      lastReset: new Date().toDateString()
+      lastReset: new Date().toDateString(),
+      tts: {
+        requests: 0,
+        successes: 0,
+        failures: 0,
+        characters: 0,
+        averageResponseTime: 0,
+        responseTimes: [],
+        errors: []
+      }
     };
   }
 
@@ -252,6 +272,60 @@ export class StatsManager {
       cost: 0
     };
     this.stats.lastReset = new Date().toDateString();
+  }
+
+  /**
+   * 记录成功的 TTS 请求
+   * @param {string} text - 合成的文本
+   * @param {number} responseTime - 响应时间（毫秒）
+   */
+  async recordTTSSuccess(text: string, responseTime: number): Promise<void> {
+    this.stats.tts.requests++;
+    this.stats.tts.successes++;
+    this.stats.tts.characters += text.length;
+    
+    // 记录响应时间
+    this.stats.tts.responseTimes.push(responseTime);
+    if (this.stats.tts.responseTimes.length > 100) {
+      this.stats.tts.responseTimes = this.stats.tts.responseTimes.slice(-100);
+    }
+    
+    // 计算平均响应时间
+    const sum = this.stats.tts.responseTimes.reduce((a, b) => a + b, 0);
+    this.stats.tts.averageResponseTime = sum / this.stats.tts.responseTimes.length;
+  }
+
+  /**
+   * 记录失败的 TTS 请求
+   * @param {Error} error - 错误信息
+   */
+  async recordTTSFailure(error: Error): Promise<void> {
+    this.stats.tts.requests++;
+    this.stats.tts.failures++;
+    
+    // 记录错误
+    this.stats.tts.errors.push({
+      message: error.message,
+      timestamp: Date.now()
+    });
+    
+    // 只保留最近 10 个错误
+    if (this.stats.tts.errors.length > 10) {
+      this.stats.tts.errors = this.stats.tts.errors.slice(-10);
+    }
+  }
+
+  /**
+   * 获取 TTS 统计信息
+   * @returns {Object}
+   */
+  getTTSStats(): TTSStats & { successRate: string } {
+    return {
+      ...this.stats.tts,
+      successRate: this.stats.tts.requests > 0
+        ? `${((this.stats.tts.successes / this.stats.tts.requests) * 100).toFixed(2)}%`
+        : '0%'
+    };
   }
 
   /**

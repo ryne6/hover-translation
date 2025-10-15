@@ -33,6 +33,10 @@
           <span class="nav-icon">⚙️</span>
           <span class="nav-text">基础设置</span>
         </button>
+        <button class="nav-item" data-page="speech">
+          <span class="nav-icon">🔊</span>
+          <span class="nav-text">语音合成</span>
+        </button>
         <button class="nav-item" data-page="advanced">
           <span class="nav-icon">🔧</span>
           <span class="nav-text">高级选项</span>
@@ -448,6 +452,102 @@
                 <span class="checkbox-label">显示原文</span>
                 <span class="checkbox-desc">在翻译结果中显示原文</span>
               </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 语音合成页面 -->
+      <section class="page" id="page-speech">
+        <div class="page-header">
+          <h2 class="page-title">语音合成设置</h2>
+          <p class="page-description">配置语音朗读功能，支持有道 TTS 和浏览器原生语音</p>
+        </div>
+
+        <div class="page-content">
+          <div class="setting-group">
+            <h3 class="setting-group-title">语音服务</h3>
+            
+            <div class="setting-item">
+              <label class="checkbox-item">
+                <input type="checkbox" id="speechEnabled">
+                <span class="checkbox-label">启用语音合成</span>
+                <span class="checkbox-desc">为翻译结果提供语音朗读功能</span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-label" for="speechProvider">语音服务提供商</label>
+              <select id="speechProvider" class="setting-select">
+                <option value="browser">浏览器原生语音</option>
+                <option value="youdao">有道语音合成</option>
+              </select>
+              <p class="form-hint">有道 TTS 提供更自然的中文语音，需要配置有道翻译 API</p>
+            </div>
+          </div>
+
+          <div class="setting-group" id="youdaoTTSConfig" style="display: none;">
+            <h3 class="setting-group-title">有道 TTS 配置</h3>
+            
+            <div class="setting-item">
+              <label class="setting-label" for="ttsVoiceName">发音人</label>
+              <select id="ttsVoiceName" class="setting-select">
+                <option value="youxiaoqin">优小琴（女声，推荐）</option>
+                <option value="youxiaozhi">优小智（男声）</option>
+                <option value="youxiaoxun">优小讯（女声）</option>
+                <option value="youxiaoyun">优小云（女声）</option>
+                <option value="youxiaoyao">优小瑶（女声）</option>
+                <option value="youxiaoyu">优小宇（男声）</option>
+                <option value="youxiaoyi">优小艺（女声）</option>
+                <option value="youxiaoyue">优小悦（女声）</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-label" for="ttsSpeed">语速</label>
+              <input type="range" id="ttsSpeed" class="setting-range" min="0.5" max="2.0" step="0.1" value="1.0">
+              <div class="range-labels">
+                <span>慢</span>
+                <span id="ttsSpeedValue">1.0</span>
+                <span>快</span>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-label" for="ttsVolume">音量</label>
+              <input type="range" id="ttsVolume" class="setting-range" min="0.5" max="5.0" step="0.1" value="1.0">
+              <div class="range-labels">
+                <span>小</span>
+                <span id="ttsVolumeValue">1.0</span>
+                <span>大</span>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-label" for="ttsFormat">音频格式</label>
+              <select id="ttsFormat" class="setting-select">
+                <option value="mp3">MP3（推荐）</option>
+                <option value="wav">WAV</option>
+              </select>
+            </div>
+
+            <div class="tts-status">
+              <div class="status-indicator" id="ttsStatus">
+                <span class="status-icon">⚠️</span>
+                <span class="status-text">需要配置有道翻译 API</span>
+              </div>
+              <p class="form-hint">有道 TTS 需要先配置有道翻译服务的 API 密钥</p>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <h3 class="setting-group-title">测试语音</h3>
+            <div class="speech-test">
+              <div class="test-input-group">
+                <input type="text" id="testText" class="form-input" placeholder="输入要测试的文本" value="你好，这是一个语音测试。">
+                <button class="btn-primary" id="testSpeech">🔊 测试语音</button>
+              </div>
+              <p class="form-hint">点击测试按钮试听当前配置的语音效果</p>
             </div>
           </div>
         </div>

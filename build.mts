@@ -59,10 +59,17 @@ async function main(): Promise<void> {
     mkdirSync('dist/assets/icons', { recursive: true });
   }
 
-  if (existsSync('assets/icons/icon.svg')) {
-    copyFileSync('assets/icons/icon.svg', 'dist/assets/icons/icon.svg');
-  }
+  // 复制所有 SVG 图标
+  const svgIcons = ['icon.svg', 'copy.svg', 'horn.svg'];
+  svgIcons.forEach((iconName) => {
+    const sourcePath = `assets/icons/${iconName}`;
+    const destPath = `dist/assets/icons/${iconName}`;
+    if (existsSync(sourcePath)) {
+      copyFileSync(sourcePath, destPath);
+    }
+  });
 
+  // 复制 PNG 图标
   const iconSizes = [16, 32, 48, 128] as const;
   iconSizes.forEach((size) => {
     const sourcePath = `assets/icons/icon-${size}.png`;

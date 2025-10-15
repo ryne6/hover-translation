@@ -11,6 +11,17 @@ export interface ProviderInstanceConfig {
 
 export type ProviderConfigMap = Record<string, ProviderInstanceConfig>;
 
+export type TTSSupportedProvider = 'youdao' | 'browser';
+
+export interface SpeechSettings {
+  enabled: boolean;
+  provider: TTSSupportedProvider;
+  voiceName: string;
+  speed: string;
+  volume: string;
+  format: 'mp3' | 'wav';
+}
+
 export interface TranslationSettings {
   providers: ProviderConfigMap;
   primaryProvider: string;
@@ -28,6 +39,7 @@ export interface TranslationSettings {
   parallelTranslation: boolean;
   autoFallback: boolean;
   languagePairPreferences?: Record<string, string>;
+  speech?: SpeechSettings;
   [key: string]: unknown;
 }
 
@@ -100,7 +112,15 @@ export class ConfigManager {
       timeout: 30000,
       retryCount: 3,
       parallelTranslation: false,
-      autoFallback: true
+      autoFallback: true,
+      speech: {
+        enabled: false,
+        provider: 'browser',
+        voiceName: 'youxiaoqin',
+        speed: '1.0',
+        volume: '1.0',
+        format: 'mp3'
+      }
     };
   }
 

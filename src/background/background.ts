@@ -264,6 +264,50 @@ class BackgroundService {
           break;
         }
 
+        case 'synthesizeSpeech': {
+          await this.ensureReady();
+          try {
+            const result = await this.apiManager.synthesizeSpeech(
+              String(request.text || ''),
+              request.options as Partial<import('../tts/interfaces').TTSSynthesisRequest> || {}
+            );
+            sendResponse({ success: true, data: result });
+          } catch (error) {
+            Logger.error('BackgroundService', 'Speech synthesis failed', error);
+            sendResponse({ success: false, error: (error as Error).message });
+          }
+          break;
+        }
+
+        case 'isTTSEnabled': {
+          const enabled = this.apiManager.isTTSEnabled();
+          sendResponse({ success: true, data: enabled });
+          break;
+        }
+
+        case 'getSpeechSettings': {
+          const settings = this.apiManager.getSpeechSettings();
+          sendResponse({ success: true, data: settings });
+          break;
+        }
+
+        case 'getTTSStats': {
+          await this.ensureReady();
+          try {
+            const statsManager = (this.apiManager as any).translationManager?.statsManager;
+            if (statsManager && typeof statsManager.getTTSStats === 'function') {
+              const ttsStats = statsManager.getTTSStats();
+              sendResponse({ success: true, data: ttsStats });
+            } else {
+              sendResponse({ success: true, data: null });
+            }
+          } catch (error) {
+            Logger.error('BackgroundService', 'Failed to get TTS stats', error);
+            sendResponse({ success: false, error: (error as Error).message });
+          }
+          break;
+        }
+
         default: {
           Logger.warn('BackgroundService', `Unknown action: ${action}`);
           sendResponse({ success: false, error: 'Unknown action' });

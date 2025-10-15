@@ -55,7 +55,8 @@ const FALLBACK_PRONUNCIATIONS: Record<
   },
 };
 
-const PRONUNCIATION_LOADING_HTML = '<div class="pronunciation-loading">正在加载音标...</div>';
+// 发音功能已隐藏，使用 TTS 语音合成替代
+// const PRONUNCIATION_LOADING_HTML = '<div class="pronunciation-loading">正在加载音标...</div>';
 const COPY_SUCCESS_COLOR = '#48bb78';
 const DEFAULT_TRANSLATION: HoverBoxTranslationData = {
   original: '',
@@ -195,9 +196,10 @@ export class HoverBox {
           <span class="text-label">原文</span>
           <p class="text-content original"></p>
         </div>
-        <div class="pronunciation-section" style="display: none;">
+        <!-- 发音功能已隐藏，使用 TTS 语音合成替代 -->
+        <!-- <div class="pronunciation-section" style="display: none;">
           <div class="pronunciation-content"></div>
-        </div>
+        </div> -->
         <div class="translated-text">
           <span class="text-label">译文</span>
           <p class="text-content translated"></p>
@@ -217,7 +219,7 @@ export class HoverBox {
     if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) {
       return chrome.runtime.getURL(`assets/icons/${filename}`);
     }
-    return `/assets/icons/${filename}`;
+    return `./assets/icons/${filename}`;
   }
 
   addEventListeners(): void {
@@ -274,7 +276,8 @@ export class HoverBox {
 
     this.updateContent(translationData);
     this.positionBox();
-    this.renderPronunciation(translationData);
+    // 发音功能已隐藏，使用 TTS 语音合成替代
+    // this.renderPronunciation(translationData);
 
     this.box.style.visibility = '';
     this.box.classList.add('show');
@@ -417,6 +420,8 @@ export class HoverBox {
     console.log('HoverBox destroyed');
   }
 
+  // 发音功能已隐藏，使用 TTS 语音合成替代
+  /*
   async renderPronunciation(data: HoverBoxTranslationData | null | undefined): Promise<void> {
     if (!this.box || !this.pronunciationSectionEl || !this.pronunciationContentEl) return;
 
@@ -490,7 +495,10 @@ export class HoverBox {
       contentEl.innerHTML = '';
     }
   }
+  */
 
+  // 发音功能已隐藏，使用 TTS 语音合成替代
+  /*
   handleAccentPronounce(accent: string, word: string, button?: HTMLButtonElement | null): void {
     const normalized = word.toLowerCase();
     if (!normalized) return;
@@ -572,6 +580,7 @@ export class HoverBox {
 
     fallback();
   }
+  */
 
   stopPronunciationAudio(): void {
     Object.keys(this.audioPlayers).forEach((accent) => {
@@ -598,7 +607,7 @@ export class HoverBox {
     this.pronunciationButtons.forEach((btn) => this.setButtonSpeaking(btn, false));
   }
 
-  handleSoundButtonClick(): void {
+  async handleSoundButtonClick(): Promise<void> {
     if (!this.soundBtn) return;
 
     if (this.soundBtn.getAttribute('aria-pressed') === 'true') {
@@ -612,16 +621,82 @@ export class HoverBox {
       return;
     }
 
-    if (!this.isSpeechSynthesisSupported()) {
-      showNotification('当前浏览器不支持语音朗读', 'warning');
+    this.stopSpeaking();
+
+    // 检查当前页面是否支持音频播放
+    if (!this.canPlayAudio()) {
+      console.log('当前页面不支持音频播放，直接使用浏览器语音合成');
+      this.fallbackToBrowserSpeech(this.soundBtn);
       return;
     }
 
-    this.stopSpeaking();
+    // 使用有道 TTS 进行语音合成
+    try {
+      const voiceName = await this.getPreferredVoiceName();
+      const response = await chrome.runtime.sendMessage({
+        action: 'synthesizeSpeech',
+        text: text,
+        options: {
+          voiceName: voiceName,
+          speed: '1.0',
+          volume: '1.0',
+          format: 'mp3'
+        }
+      });
 
-    const lang = (this.currentTranslation?.detectedSourceLanguage || this.currentTranslation?.sourceLang || 'en').toLowerCase();
-    const locale = this.mapLanguageToLocale(lang);
-    this.speakWithSpeechSynthesis(locale, text, { button: this.soundBtn });
+      if (response?.success) {
+        await this.playYoudaoAudio(response.data, this.soundBtn);
+        return;
+      } else {
+        showNotification('语音合成失败: ' + (response?.error || '未知错误'), 'error');
+      }
+    } catch (error) {
+      console.error('有道 TTS 失败:', error);
+      showNotification('语音合成服务不可用', 'error');
+    }
+  }
+
+  /**
+   * 检测当前页面是否支持音频播放
+   */
+  private canPlayAudio(): boolean {
+    try {
+      // 检查是否支持 Audio 构造函数
+      if (typeof Audio === 'undefined') {
+        return false;
+      }
+
+      // 检查是否支持 Blob 和 URL.createObjectURL
+      if (typeof Blob === 'undefined' || typeof URL === 'undefined' || typeof URL.createObjectURL === 'undefined') {
+        return false;
+      }
+
+      // 尝试创建一个小的测试音频
+      const testAudio = new Audio();
+      if (!testAudio) {
+        return false;
+      }
+
+      // 检查当前域名是否在已知的限制列表中
+      const hostname = window.location.hostname;
+      const restrictedDomains = [
+        'github.com',
+        'github.io',
+        'gitlab.com',
+        'bitbucket.org'
+      ];
+
+      // 如果是在限制域名上，直接返回 false
+      if (restrictedDomains.some(domain => hostname.includes(domain))) {
+        console.log('检测到限制域名，跳过音频播放');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.warn('音频播放检测失败:', error);
+      return false;
+    }
   }
 
   isSpeechSynthesisSupported(): boolean {
@@ -872,5 +947,121 @@ export class HoverBox {
       })),
       defaultAccent: fallback.defaultAccent
     };
+  }
+
+  /**
+   * 播放有道 TTS 音频
+   */
+  private async playYoudaoAudio(audioData: { audioData: string; format: string }, button?: HTMLButtonElement | null): Promise<void> {
+    try {
+      const audio = new Audio();
+      
+      // 尝试使用 Blob URL 方式播放
+      const blobUrl = await this.createBlobUrl(audioData);
+      audio.src = blobUrl;
+      
+      if (button) {
+        this.setButtonSpeaking(button, true);
+      }
+
+      const finish = () => {
+        if (button) {
+          this.setButtonSpeaking(button, false);
+        }
+        // 清理 Blob URL
+        if (blobUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(blobUrl);
+        }
+      };
+
+      audio.onended = finish;
+      audio.onerror = (error) => {
+        console.warn('有道 TTS 音频播放失败，可能是 CSP 限制，回退到浏览器语音:', error);
+        finish();
+        // 回退到浏览器原生语音合成
+        this.fallbackToBrowserSpeech(button);
+      };
+
+      await audio.play();
+    } catch (error) {
+      console.error('播放有道 TTS 音频失败，可能是 CSP 限制，回退到浏览器语音:', error);
+      if (button) {
+        this.setButtonSpeaking(button, false);
+      }
+      // 回退到浏览器原生语音合成
+      this.fallbackToBrowserSpeech(button);
+    }
+  }
+
+  /**
+   * 创建 Blob URL 用于播放音频
+   */
+  private async createBlobUrl(audioData: { audioData: string; format: string }): Promise<string> {
+    try {
+      // 将 base64 转换为二进制数据
+      const binaryString = atob(audioData.audioData);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      // 创建 Blob
+      const blob = new Blob([bytes], { type: `audio/${audioData.format}` });
+      
+      // 创建 Blob URL
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.warn('创建 Blob URL 失败，回退到 data URL:', error);
+      // 如果 Blob URL 创建失败，回退到 data URL
+      return `data:audio/${audioData.format};base64,${audioData.audioData}`;
+    }
+  }
+
+  /**
+   * 回退到浏览器原生语音合成
+   */
+  private fallbackToBrowserSpeech(button?: HTMLButtonElement | null): void {
+    const text = this.currentTranslation?.original?.trim();
+    if (!text) {
+      showNotification('暂无可朗读的文本', 'warning');
+      return;
+    }
+
+    if (!this.isSpeechSynthesisSupported()) {
+      showNotification('当前浏览器不支持语音朗读', 'warning');
+      return;
+    }
+
+    const lang = (this.currentTranslation?.detectedSourceLanguage || this.currentTranslation?.sourceLang || 'en').toLowerCase();
+    const locale = this.mapLanguageToLocale(lang);
+    this.speakWithSpeechSynthesis(locale, text, { button });
+  }
+
+  /**
+   * 获取首选语音名称
+   */
+  private async getPreferredVoiceName(): Promise<string> {
+    try {
+      // 从设置中获取语音配置
+      const response = await chrome.runtime.sendMessage({
+        action: 'getSpeechSettings'
+      });
+
+      if (response?.success && response.data?.voiceName) {
+        return response.data.voiceName;
+      }
+    } catch (error) {
+      console.warn('获取语音设置失败，使用默认语音:', error);
+    }
+
+    // 回退到基于语言的默认选择
+    const sourceLang = (this.currentTranslation?.detectedSourceLanguage || this.currentTranslation?.sourceLang || 'en').toLowerCase();
+    
+    // 中文使用女声，英文使用男声
+    if (sourceLang === 'zh' || sourceLang === 'zh-cn' || sourceLang === 'zh-tw') {
+      return 'youxiaoqin'; // 中文女声
+    } else {
+      return 'youxiaozhi'; // 英文男声
+    }
   }
 }

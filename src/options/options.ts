@@ -660,6 +660,29 @@ class PopupManager {
       autoFallbackCheckbox.checked = this.settings.autoFallback !== false;
     }
 
+    // 加载语音合成设置
+    const speechEnabledInput = document.getElementById('speechEnabled') as HTMLInputElement | null;
+    const speechProviderSelect = document.getElementById('speechProvider') as HTMLSelectElement | null;
+    const ttsVoiceNameSelect = document.getElementById('ttsVoiceName') as HTMLSelectElement | null;
+    const ttsSpeedInput = document.getElementById('ttsSpeed') as HTMLInputElement | null;
+    const ttsVolumeInput = document.getElementById('ttsVolume') as HTMLInputElement | null;
+    const ttsFormatSelect = document.getElementById('ttsFormat') as HTMLSelectElement | null;
+
+    if (speechEnabledInput && speechProviderSelect) {
+      const speechSettings = this.settings.speech || ConfigManager.getDefaults().speech!;
+      speechEnabledInput.checked = speechSettings.enabled;
+      speechProviderSelect.value = speechSettings.provider;
+      
+      if (ttsVoiceNameSelect) ttsVoiceNameSelect.value = speechSettings.voiceName;
+      if (ttsSpeedInput) ttsSpeedInput.value = speechSettings.speed;
+      if (ttsVolumeInput) ttsVolumeInput.value = speechSettings.volume;
+      if (ttsFormatSelect) ttsFormatSelect.value = speechSettings.format;
+
+      // 更新有道 TTS 配置显示状态
+      this.updateYoudaoTTSConfigVisibility();
+      this.updateTTSStatus();
+    }
+
     Object.entries(this.settings.providers ?? {}).forEach(([providerId, config]) => {
       const card = document.querySelector<HTMLElement>(`.provider-card[data-provider="${providerId}"]`);
       if (!card) {
@@ -777,6 +800,25 @@ class PopupManager {
     const primaryProviderSelect = document.getElementById('primaryProvider') as HTMLSelectElement | null;
     if (primaryProviderSelect) {
       settings.primaryProvider = primaryProviderSelect.value;
+    }
+
+    // 语音合成设置
+    const speechEnabledInput = document.getElementById('speechEnabled') as HTMLInputElement | null;
+    const speechProviderSelect = document.getElementById('speechProvider') as HTMLSelectElement | null;
+    const ttsVoiceNameSelect = document.getElementById('ttsVoiceName') as HTMLSelectElement | null;
+    const ttsSpeedInput = document.getElementById('ttsSpeed') as HTMLInputElement | null;
+    const ttsVolumeInput = document.getElementById('ttsVolume') as HTMLInputElement | null;
+    const ttsFormatSelect = document.getElementById('ttsFormat') as HTMLSelectElement | null;
+
+    if (speechEnabledInput && speechProviderSelect) {
+      settings.speech = {
+        enabled: speechEnabledInput.checked,
+        provider: speechProviderSelect.value as 'browser' | 'youdao',
+        voiceName: ttsVoiceNameSelect?.value || 'youxiaoqin',
+        speed: ttsSpeedInput?.value || '1.0',
+        volume: ttsVolumeInput?.value || '1.0',
+        format: (ttsFormatSelect?.value as 'mp3' | 'wav') || 'mp3'
+      };
     }
 
     settings.fallbackProviders = Array.isArray(this.settings.fallbackProviders)
@@ -919,6 +961,88 @@ class PopupManager {
   }
 
   /**
+   * 更新有道 TTS 配置显示状态
+   */
+  private updateYoudaoTTSConfigVisibility(): void {
+    const speechProviderSelect = document.getElementById('speechProvider') as HTMLSelectElement | null;
+    const youdaoTTSConfig = document.getElementById('youdaoTTSConfig');
+    
+    if (speechProviderSelect && youdaoTTSConfig) {
+      youdaoTTSConfig.style.display = speechProviderSelect.value === 'youdao' ? 'block' : 'none';
+    }
+  }
+
+  /**
+   * 更新 TTS 状态显示
+   */
+  private updateTTSStatus(): void {
+    const statusEl = document.getElementById('ttsStatus');
+    if (!statusEl) return;
+
+    const speechProviderSelect = document.getElementById('speechProvider') as HTMLSelectElement | null;
+    const youdaoConfig = this.settings.providers?.youdao;
+    
+    if (speechProviderSelect?.value === 'youdao') {
+      if (youdaoConfig?.enabled && youdaoConfig?.apiKey && youdaoConfig?.apiSecret) {
+        statusEl.innerHTML = '<span class="status-icon">✅</span><span class="status-text">有道 TTS 已配置</span>';
+      } else {
+        statusEl.innerHTML = '<span class="status-icon">⚠️</span><span class="status-text">需要配置有道翻译 API</span>';
+      }
+    } else {
+      statusEl.innerHTML = '<span class="status-icon">ℹ️</span><span class="status-text">使用浏览器原生语音</span>';
+    }
+  }
+
+  /**
+   * 测试语音合成
+   */
+  private async testSpeechSynthesis(): Promise<void> {
+    const testTextInput = document.getElementById('testText') as HTMLInputElement | null;
+    const testBtn = document.getElementById('testSpeech') as HTMLButtonElement | null;
+    
+    if (!testTextInput || !testBtn) return;
+
+    const text = testTextInput.value.trim();
+    if (!text) {
+      this.showError('请输入要测试的文本');
+      return;
+    }
+
+    const originalText = testBtn.textContent;
+    testBtn.disabled = true;
+    testBtn.textContent = '⏳ 合成中...';
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'synthesizeSpeech',
+        text: text,
+        options: {
+          voiceName: (document.getElementById('ttsVoiceName') as HTMLSelectElement)?.value,
+          speed: (document.getElementById('ttsSpeed') as HTMLInputElement)?.value,
+          volume: (document.getElementById('ttsVolume') as HTMLInputElement)?.value,
+          format: (document.getElementById('ttsFormat') as HTMLSelectElement)?.value
+        }
+      });
+
+      if (response?.success) {
+        // 播放音频
+        const audio = new Audio();
+        audio.src = `data:audio/${response.data.format};base64,${response.data.audioData}`;
+        await audio.play();
+        this.showSuccess('语音播放成功');
+      } else {
+        this.showError('语音合成失败: ' + (response?.error || '未知错误'));
+      }
+    } catch (error) {
+      console.error('语音测试失败:', error);
+      this.showError('语音测试失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    } finally {
+      testBtn.disabled = false;
+      testBtn.textContent = originalText;
+    }
+  }
+
+  /**
    * 绑定事件
    */
   bindEvents(): void {
@@ -1028,6 +1152,42 @@ class PopupManager {
         anchor.download = `translation-stats-${new Date().toISOString()}.json`;
         anchor.click();
         URL.revokeObjectURL(url);
+      });
+    }
+
+    // 语音合成相关事件
+    const speechProviderSelect = document.getElementById('speechProvider') as HTMLSelectElement | null;
+    if (speechProviderSelect) {
+      speechProviderSelect.addEventListener('change', () => {
+        this.updateYoudaoTTSConfigVisibility();
+        this.updateTTSStatus();
+      });
+    }
+
+    const ttsSpeedInput = document.getElementById('ttsSpeed') as HTMLInputElement | null;
+    if (ttsSpeedInput) {
+      ttsSpeedInput.addEventListener('input', () => {
+        const valueEl = document.getElementById('ttsSpeedValue');
+        if (valueEl) {
+          valueEl.textContent = ttsSpeedInput.value;
+        }
+      });
+    }
+
+    const ttsVolumeInput = document.getElementById('ttsVolume') as HTMLInputElement | null;
+    if (ttsVolumeInput) {
+      ttsVolumeInput.addEventListener('input', () => {
+        const valueEl = document.getElementById('ttsVolumeValue');
+        if (valueEl) {
+          valueEl.textContent = ttsVolumeInput.value;
+        }
+      });
+    }
+
+    const testSpeechBtn = document.getElementById('testSpeech') as HTMLButtonElement | null;
+    if (testSpeechBtn) {
+      testSpeechBtn.addEventListener('click', () => {
+        void this.testSpeechSynthesis();
       });
     }
   }
