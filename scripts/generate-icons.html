@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Icon Generator - Hover Translation</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 40px;
+      font-size: 2.5em;
+    }
+    
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+    
+    .preview-item {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+    
+    .preview-item:hover {
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .preview-item h3 {
+      margin: 0 0 20px 0;
+      font-size: 1.2em;
+    }
+    
+    .icon-container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+    
+    canvas {
+      display: block;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+    
+    button {
+      background: #4F46E5;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    button:hover {
+      background: #4338CA;
+      transform: scale(1.05);
+    }
+    
+    button:active {
+      transform: scale(0.95);
+    }
+    
+    .instructions {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 30px;
+      margin-top: 40px;
+    }
+    
+    .instructions h2 {
+      margin-top: 0;
+    }
+    
+    .instructions ol {
+      line-height: 1.8;
+    }
+    
+    .success-message {
+      background: #10B981;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 Hover Translation Icon Generator</h1>
+  
+  <div class="preview-grid">
+    <div class="preview-item">
+      <h3>16x16</h3>
+      <div class="icon-container">
+        <canvas id="canvas-16" width="16" height="16"></canvas>
+      </div>
+      <button onclick="downloadIcon(16)">下载 PNG</button>
+    </div>
+    
+    <div class="preview-item">
+      <h3>32x32</h3>
+      <div class="icon-container">
+        <canvas id="canvas-32" width="32" height="32"></canvas>
+      </div>
+      <button onclick="downloadIcon(32)">下载 PNG</button>
+    </div>
+    
+    <div class="preview-item">
+      <h3>48x48</h3>
+      <div class="icon-container">
+        <canvas id="canvas-48" width="48" height="48"></canvas>
+      </div>
+      <button onclick="downloadIcon(48)">下载 PNG</button>
+    </div>
+    
+    <div class="preview-item">
+      <h3>128x128</h3>
+      <div class="icon-container">
+        <canvas id="canvas-128" width="128" height="128"></canvas>
+      </div>
+      <button onclick="downloadIcon(128)">下载 PNG</button>
+    </div>
+  </div>
+  
+  <div class="instructions">
+    <h2>📝 使用说明</h2>
+    <ol>
+      <li>点击上方的"下载 PNG"按钮下载对应尺寸的图标</li>
+      <li>将下载的文件重命名为 <code>icon-16.png</code>, <code>icon-32.png</code>, <code>icon-48.png</code>, <code>icon-128.png</code></li>
+      <li>将文件放到 <code>assets/icons/</code> 目录下</li>
+      <li>重新构建项目即可看到新图标！</li>
+    </ol>
+  </div>
+  
+  <div id="success-message" class="success-message">
+    ✅ 图标已下载！
+  </div>
+
+  <script>
+    const svgContent = `
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bubbleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F3F4F6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <circle cx="64" cy="64" r="60" fill="url(#bgGradient)"/>
+  
+  <defs>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="0.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <g transform="translate(64, 64) rotate(-12) scale(0.92, 1.08)">
+    <path d="M -42 8 Q -42 -48 0 -48 Q 42 -48 42 8 L 42 38 Q 35 45 25 38 Q 18 32 8 38 Q 0 44 -8 38 Q -18 32 -25 38 Q -35 45 -42 38 Z" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="2" opacity="0.98" filter="url(#softGlow)"/>
+    <ellipse cx="-16" cy="-15" rx="6" ry="8" fill="#2D3748"/>
+    <circle cx="-15" cy="-17" r="2.5" fill="#FFFFFF"/>
+    <circle cx="-17" cy="-13" r="1.2" fill="#FFFFFF" opacity="0.7"/>
+    <ellipse cx="16" cy="-13" rx="6" ry="8" fill="#2D3748"/>
+    <circle cx="17" cy="-15" r="2.5" fill="#FFFFFF"/>
+    <circle cx="15" cy="-11" r="1.2" fill="#FFFFFF" opacity="0.7"/>
+    <path d="M -13 5 Q -5 10 5 8 Q 10 7 12 6" stroke="#2D3748" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="2" cy="9" rx="3" ry="2" fill="#FF6B9D" opacity="0.6"/>
+    <ellipse cx="-38" cy="10" rx="7" ry="5" fill="#FFFFFF" opacity="0.9" transform="rotate(-25 -38 10)"/>
+    <ellipse cx="38" cy="12" rx="7" ry="5" fill="#FFFFFF" opacity="0.9" transform="rotate(25 38 12)"/>
+  </g>
+  
+  <g opacity="0.8">
+    <circle cx="24" cy="24" r="2" fill="#FBBF24"/>
+    <circle cx="104" cy="24" r="2" fill="#FBBF24"/>
+    <circle cx="24" cy="104" r="2" fill="#FBBF24"/>
+    <circle cx="104" cy="104" r="2" fill="#FBBF24"/>
+  </g>
+  
+  <g opacity="0.6">
+    <path d="M 20 30 L 22 34 L 18 34 Z" fill="#FFFFFF"/>
+    <path d="M 108 30 L 110 34 L 106 34 Z" fill="#FFFFFF"/>
+  </g>
+</svg>
+    `;
+
+    const sizes = [16, 32, 48, 128];
+    
+    function loadSVG() {
+      const img = new Image();
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      
+      img.onload = function() {
+        sizes.forEach(size => {
+          const canvas = document.getElementById(`canvas-${size}`);
+          const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, size, size);
+        });
+        URL.revokeObjectURL(url);
+      };
+      
+      img.src = url;
+    }
+    
+    function downloadIcon(size) {
+      const canvas = document.getElementById(`canvas-${size}`);
+      canvas.toBlob(function(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `icon-${size}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // 显示成功消息
+        const message = document.getElementById('success-message');
+        message.style.display = 'block';
+        setTimeout(() => {
+          message.style.display = 'none';
+        }, 3000);
+      });
+    }
+    
+    // 页面加载时生成图标
+    window.onload = loadSVG;
+  </script>
+</body>
+</html>

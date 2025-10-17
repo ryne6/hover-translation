@@ -1,34 +1,83 @@
 <svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆形 - 渐变蓝色 -->
   <defs>
-    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#667eea"/>
-      <stop offset="100%" style="stop-color:#764ba2"/>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bubbleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F3F4F6;stop-opacity:1" />
     </linearGradient>
   </defs>
   
-  <!-- 背景圆形 -->
-  <circle cx="64" cy="64" r="60" fill="url(#gradient)" stroke="white" stroke-width="4"/>
+  <!-- 主背景圆 -->
+  <circle cx="64" cy="64" r="60" fill="url(#bgGradient)"/>
   
-  <!-- 翻译图标 -->
-  <g transform="translate(32, 32)">
-    <!-- 文档背景 -->
-    <rect x="8" y="12" width="48" height="32" rx="4" fill="white" opacity="0.9"/>
+  <!-- 飘动的小幽灵 👻 (居中 + 侧身飘动姿态) -->
+  <g transform="translate(64, 64) rotate(-12) scale(0.92, 1.08)">
+    <!-- 幽灵主体 (飘动姿态 - 底部波浪更动感) -->
+    <path d="M -42 8 
+             Q -42 -48 0 -48 
+             Q 42 -48 42 8 
+             L 42 38 
+             Q 35 45 25 38 
+             Q 18 32 8 38 
+             Q 0 44 -8 38 
+             Q -18 32 -25 38 
+             Q -35 45 -42 38 
+             Z" 
+          fill="#FFFFFF" 
+          stroke="#E5E7EB"
+          stroke-width="2"
+          opacity="0.98"
+          filter="url(#softGlow)"/>
     
-    <!-- 文字行 -->
-    <rect x="12" y="18" width="40" height="2" rx="1" fill="#667eea"/>
-    <rect x="12" y="24" width="32" height="2" rx="1" fill="#667eea"/>
-    <rect x="12" y="30" width="36" height="2" rx="1" fill="#667eea"/>
+    <!-- 左眼 (更大更有神) -->
+    <ellipse cx="-16" cy="-15" rx="6" ry="8" fill="#2D3748"/>
+    <circle cx="-15" cy="-17" r="2.5" fill="#FFFFFF"/>
+    <circle cx="-17" cy="-13" r="1.2" fill="#FFFFFF" opacity="0.7"/>
     
-    <!-- 箭头 -->
-    <path d="M44 20 L52 20 L48 16 L52 20 L48 24 Z" fill="#764ba2"/>
+    <!-- 右眼 (稍微不对称，更灵动) -->
+    <ellipse cx="16" cy="-13" rx="6" ry="8" fill="#2D3748"/>
+    <circle cx="17" cy="-15" r="2.5" fill="#FFFFFF"/>
+    <circle cx="15" cy="-11" r="1.2" fill="#FFFFFF" opacity="0.7"/>
     
-    <!-- 翻译后的文字 -->
-    <rect x="12" y="36" width="28" height="2" rx="1" fill="#764ba2"/>
-    <rect x="12" y="40" width="24" height="2" rx="1" fill="#764ba2"/>
+    <!-- 俏皮的微笑 (不对称) -->
+    <path d="M -13 5 Q -5 10 5 8 Q 10 7 12 6" stroke="#2D3748" stroke-width="3" fill="none" stroke-linecap="round"/>
+    
+    <!-- 小舌头 (增加可爱感) -->
+    <ellipse cx="2" cy="9" rx="3" ry="2" fill="#FF6B9D" opacity="0.6"/>
+    
+    <!-- 飘动的小手 (左) -->
+    <ellipse cx="-38" cy="10" rx="7" ry="5" fill="#FFFFFF" opacity="0.9" transform="rotate(-25 -38 10)"/>
+    
+    <!-- 飘动的小手 (右) -->
+    <ellipse cx="38" cy="12" rx="7" ry="5" fill="#FFFFFF" opacity="0.9" transform="rotate(25 38 12)"/>
   </g>
   
-  <!-- 悬浮效果点 -->
-  <circle cx="80" cy="40" r="3" fill="white" opacity="0.8"/>
-  <circle cx="88" cy="48" r="2" fill="white" opacity="0.6"/>
-  <circle cx="76" cy="56" r="2.5" fill="white" opacity="0.7"/>
+  <!-- 柔和光晕效果 -->
+  <defs>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="0.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- 装饰性星星 ✨ -->
+  <g opacity="0.8">
+    <circle cx="24" cy="24" r="2" fill="#FBBF24"/>
+    <circle cx="104" cy="24" r="2" fill="#FBBF24"/>
+    <circle cx="24" cy="104" r="2" fill="#FBBF24"/>
+    <circle cx="104" cy="104" r="2" fill="#FBBF24"/>
+  </g>
+  
+  <!-- 可爱的闪光效果 -->
+  <g opacity="0.6">
+    <path d="M 20 30 L 22 34 L 18 34 Z" fill="#FFFFFF"/>
+    <path d="M 108 30 L 110 34 L 106 34 Z" fill="#FFFFFF"/>
+  </g>
 </svg>
