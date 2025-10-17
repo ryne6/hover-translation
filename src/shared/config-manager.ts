@@ -22,6 +22,12 @@ export interface SpeechSettings {
   format: 'mp3' | 'wav';
 }
 
+export interface AutoSavePreferences {
+  autoSaveEnabled: boolean;
+  showSuggestions: boolean;
+  showFloatingButton: boolean;
+}
+
 export interface TranslationSettings {
   providers: ProviderConfigMap;
   primaryProvider: string;
@@ -40,6 +46,7 @@ export interface TranslationSettings {
   autoFallback: boolean;
   languagePairPreferences?: Record<string, string>;
   speech?: SpeechSettings;
+  autoSavePreferences?: AutoSavePreferences;
   [key: string]: unknown;
 }
 
@@ -120,6 +127,11 @@ export class ConfigManager {
         speed: '1.0',
         volume: '1.0',
         format: 'mp3'
+      },
+      autoSavePreferences: {
+        autoSaveEnabled: true,
+        showSuggestions: true,
+        showFloatingButton: true
       }
     };
   }

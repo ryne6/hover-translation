@@ -1,0 +1,351 @@
+/* 配置建议卡片基础样式 */
+.config-suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  border-left: 4px solid #3498db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* 显示动画 */
+.config-suggestion-show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* 隐藏动画 */
+.config-suggestion-hide {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+/* 配置建议图标 */
+.config-suggestion-icon {
+  flex-shrink: 0;
+  font-size: 24px;
+  line-height: 1;
+}
+
+/* 配置建议内容区域 */
+.config-suggestion-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 配置建议消息 */
+.config-suggestion-message {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #2c3e50;
+}
+
+/* 配置建议按钮区域 */
+.config-suggestion-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 配置建议按钮基础样式 */
+.config-suggestion-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+/* 主要按钮 */
+.config-suggestion-btn-primary {
+  background: #3498db;
+  color: white;
+}
+
+.config-suggestion-btn-primary:hover {
+  background: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.config-suggestion-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* 次要按钮 */
+.config-suggestion-btn-secondary {
+  background: #ecf0f1;
+  color: #2c3e50;
+}
+
+.config-suggestion-btn-secondary:hover {
+  background: #d5dbdb;
+}
+
+.config-suggestion-btn-secondary:active {
+  background: #bdc3c7;
+}
+
+/* 关闭按钮 */
+.config-suggestion-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #7f8c8d;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.config-suggestion-close:hover {
+  color: #2c3e50;
+}
+
+/* 配置建议类型 - 信息 */
+.config-suggestion-info {
+  background: #e8f4f8;
+  border-left-color: #3498db;
+}
+
+.config-suggestion-info .config-suggestion-message {
+  color: #2c3e50;
+}
+
+/* 配置建议类型 - 警告 */
+.config-suggestion-warning {
+  background: #fef5e7;
+  border-left-color: #f39c12;
+}
+
+.config-suggestion-warning .config-suggestion-message {
+  color: #7d6608;
+}
+
+.config-suggestion-warning .config-suggestion-btn-primary {
+  background: #f39c12;
+}
+
+.config-suggestion-warning .config-suggestion-btn-primary:hover {
+  background: #e67e22;
+}
+
+/* 配置建议类型 - 成功 */
+.config-suggestion-success {
+  background: #e8f8f5;
+  border-left-color: #2ecc71;
+}
+
+.config-suggestion-success .config-suggestion-message {
+  color: #0e6251;
+}
+
+.config-suggestion-success .config-suggestion-btn-primary {
+  background: #2ecc71;
+}
+
+.config-suggestion-success .config-suggestion-btn-primary:hover {
+  background: #27ae60;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .config-suggestion {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .config-suggestion-icon {
+    font-size: 20px;
+  }
+
+  .config-suggestion-message {
+    font-size: 13px;
+  }
+
+  .config-suggestion-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .config-suggestion-actions {
+    flex-direction: column;
+  }
+
+  .config-suggestion-btn {
+    width: 100%;
+  }
+}
+
+/* 小屏幕优化 */
+@media (max-width: 480px) {
+  .config-suggestion {
+    margin: 12px 0;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .config-suggestion-icon {
+    font-size: 18px;
+  }
+
+  .config-suggestion-message {
+    font-size: 12px;
+  }
+
+  .config-suggestion-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .config-suggestion-close {
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+  }
+}
+
+/* 暗色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .config-suggestion-info {
+    background: #1a2332;
+    border-left-color: #3498db;
+  }
+
+  .config-suggestion-info .config-suggestion-message {
+    color: #ecf0f1;
+  }
+
+  .config-suggestion-warning {
+    background: #2c2416;
+    border-left-color: #f39c12;
+  }
+
+  .config-suggestion-warning .config-suggestion-message {
+    color: #f8e5c1;
+  }
+
+  .config-suggestion-success {
+    background: #162822;
+    border-left-color: #2ecc71;
+  }
+
+  .config-suggestion-success .config-suggestion-message {
+    color: #d5f4e6;
+  }
+
+  .config-suggestion-btn-secondary {
+    background: #34495e;
+    color: #ecf0f1;
+  }
+
+  .config-suggestion-btn-secondary:hover {
+    background: #2c3e50;
+  }
+
+  .config-suggestion-close {
+    color: #95a5a6;
+  }
+
+  .config-suggestion-close:hover {
+    color: #ecf0f1;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .config-suggestion {
+    border: 2px solid currentColor;
+  }
+
+  .config-suggestion-btn {
+    border: 2px solid currentColor;
+  }
+}
+
+/* 减少动画模式支持 */
+@media (prefers-reduced-motion: reduce) {
+  .config-suggestion {
+    transition: opacity 0.2s;
+  }
+
+  .config-suggestion-show {
+    transform: translateX(0);
+  }
+
+  .config-suggestion-hide {
+    transform: translateX(0);
+  }
+
+  .config-suggestion-btn-primary:hover {
+    transform: none;
+  }
+}
+
+/* 打印时隐藏 */
+@media print {
+  .config-suggestion {
+    display: none !important;
+  }
+}
+
+/* 焦点样式（键盘导航） */
+.config-suggestion-btn:focus-visible {
+  outline: 3px solid rgba(52, 152, 219, 0.5);
+  outline-offset: 2px;
+}
+
+.config-suggestion-close:focus-visible {
+  outline: 2px solid rgba(52, 152, 219, 0.5);
+  outline-offset: 2px;
+}
+
+/* 动画关键帧 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 可选：添加脉冲动画吸引注意力 */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+  }
+}
+
+.config-suggestion-show {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* 可选：首次显示时添加脉冲效果 */
+.config-suggestion-show.config-suggestion-pulse {
+  animation: slideIn 0.3s ease-out, pulse 2s ease-in-out 0.3s 3;
+}

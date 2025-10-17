@@ -982,3 +982,19 @@ input[type="radio"] {
     flex-direction: column;
   }
 }
+
+
+/* 高亮提供商配置卡片 */
+.highlight-provider {
+  animation: highlightPulse 1s ease-out 3;
+  box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.3) !important;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(52, 152, 219, 0.5);
+  }
+}

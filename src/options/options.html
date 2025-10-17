@@ -6,6 +6,9 @@
   <title>Hover Translation - 设置</title>
   <link rel="stylesheet" href="styles/variables.css">
   <link rel="stylesheet" href="styles/options.css">
+  <link rel="stylesheet" href="styles/toast.css">
+  <link rel="stylesheet" href="styles/floating-button.css">
+  <link rel="stylesheet" href="styles/config-suggestion.css">
 </head>
 <body>
   <div class="options-container">
@@ -378,6 +381,32 @@
             </h3>
             <div class="fallback-list" id="fallbackList">
               <p class="empty-state">请先配置至少一个翻译服务</p>
+            </div>
+          </div>
+
+          <!-- 自动保存设置 -->
+          <div class="setting-group">
+            <h3 class="setting-group-title">⚙️ 保存设置</h3>
+            <div class="setting-item">
+              <label class="setting-checkbox">
+                <input type="checkbox" id="autoSaveEnabled" checked>
+                <span class="setting-label">验证成功后自动保存配置</span>
+              </label>
+              <p class="setting-hint">启用后，验证翻译服务配置成功时会自动保存，无需手动点击保存按钮</p>
+            </div>
+            <div class="setting-item">
+              <label class="setting-checkbox">
+                <input type="checkbox" id="showSuggestions" checked>
+                <span class="setting-label">显示配置建议提示</span>
+              </label>
+              <p class="setting-hint">启用后，系统会智能推荐相关配置（如启用有道翻译后提示启用有道 TTS）</p>
+            </div>
+            <div class="setting-item">
+              <label class="setting-checkbox">
+                <input type="checkbox" id="showFloatingButton" checked>
+                <span class="setting-label">显示浮动保存按钮</span>
+              </label>
+              <p class="setting-hint">启用后，当有未保存的更改时会在页面右下角显示浮动保存按钮</p>
             </div>
           </div>
 

@@ -52,6 +52,9 @@ async function main(): Promise<void> {
   copyFileSync('src/styles/variables.css', 'dist/styles/variables.css');
   copyFileSync('src/styles/hover-box.css', 'dist/styles/hover-box.css');
   copyFileSync('src/styles/content.css', 'dist/styles/content.css');
+  copyFileSync('src/styles/toast.css', 'dist/styles/toast.css');
+  copyFileSync('src/styles/floating-button.css', 'dist/styles/floating-button.css');
+  copyFileSync('src/styles/config-suggestion.css', 'dist/styles/config-suggestion.css');
   copyFileSync('src/popup/popup.css', 'dist/styles/popup.css');
   copyFileSync('src/options/options.css', 'dist/styles/options.css');
 

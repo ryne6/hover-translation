@@ -2,6 +2,7 @@
 import { sendRuntimeMessage } from '../shared/utils';
 import { StorageManager } from '../shared/storage';
 import { ConfigManager } from '../shared/config-manager';
+import { AutoSaveManager } from './auto-save-manager';
 import type { TranslationSettings, ProviderInstanceConfig, ProviderConfigMap } from '../shared/config-manager';
 import type { ProviderInfo, ProviderStatsSnapshot, StatsSnapshot } from '../translation/interfaces/types';
 import type { SupportedLanguageCode } from '../shared/constants';
@@ -67,11 +68,26 @@ class PopupManager {
 
   private readonly storageManager: StorageManager;
 
+  private readonly autoSaveManager: AutoSaveManager;
+
   constructor() {
     this.providers = [];
     this.storageManager = new StorageManager();
     this.settings = ConfigManager.getDefaults();
     this.stats = null;
+
+    // 初始化自动保存管理器
+    this.autoSaveManager = new AutoSaveManager({
+      autoSaveEnabled: true,
+      showSuggestions: true,
+      showFloatingButton: true,
+      onSave: async (settings) => {
+        return await this.storageManager.saveSettings(settings);
+      },
+      onConfigChange: (settings) => {
+        this.settings = settings;
+      }
+    });
 
     void this.init();
   }
@@ -87,6 +103,15 @@ class PopupManager {
 
       // 加载用户设置
       await this.loadSettings();
+
+      // 设置自动保存管理器的配置
+      this.autoSaveManager.setSettings(this.settings);
+      
+      // 加载已忽略的建议
+      this.autoSaveManager.loadDismissedSuggestions();
+
+      // 检查是否首次使用
+      this.checkFirstTimeUser();
 
       // 初始化 UI
       this.initializeUI();
@@ -503,19 +528,8 @@ class PopupManager {
           this.handleProviderToggle(providerId, true);
         }
 
-        // 保存配置到内存
-        if (!this.settings.providers) {
-          this.settings.providers = {};
-        }
-        const existingConfig = this.settings.providers[providerId] ?? {} as ProviderInstanceConfig;
-        this.settings.providers[providerId] = {
-          ...existingConfig,
-          ...config,
-          enabled: true
-        };
-
-        // 提示用户保存
-        this.showSuccess('验证成功！请点击下方"保存所有设置"按钮以应用配置');
+        // 使用自动保存管理器处理验证成功后的逻辑
+        await this.autoSaveManager.onValidationSuccess(providerId, config);
       } else {
         statusEl.textContent = '✗ 验证失败: ' + (response?.data?.message || '未知错误');
         statusEl.className = 'validation-status error';
@@ -683,6 +697,22 @@ class PopupManager {
       this.updateTTSStatus();
     }
 
+    // 加载自动保存偏好设置
+    const autoSavePrefs = this.settings.autoSavePreferences || ConfigManager.getDefaults().autoSavePreferences!;
+    const autoSaveEnabledInput = document.getElementById('autoSaveEnabled') as HTMLInputElement | null;
+    const showSuggestionsInput = document.getElementById('showSuggestions') as HTMLInputElement | null;
+    const showFloatingButtonInput = document.getElementById('showFloatingButton') as HTMLInputElement | null;
+
+    if (autoSaveEnabledInput) {
+      autoSaveEnabledInput.checked = autoSavePrefs.autoSaveEnabled;
+    }
+    if (showSuggestionsInput) {
+      showSuggestionsInput.checked = autoSavePrefs.showSuggestions;
+    }
+    if (showFloatingButtonInput) {
+      showFloatingButtonInput.checked = autoSavePrefs.showFloatingButton;
+    }
+
     Object.entries(this.settings.providers ?? {}).forEach(([providerId, config]) => {
       const card = document.querySelector<HTMLElement>(`.provider-card[data-provider="${providerId}"]`);
       if (!card) {
@@ -820,6 +850,17 @@ class PopupManager {
         format: (ttsFormatSelect?.value as 'mp3' | 'wav') || 'mp3'
       };
     }
+
+    // 自动保存偏好设置
+    const autoSaveEnabledInput = document.getElementById('autoSaveEnabled') as HTMLInputElement | null;
+    const showSuggestionsInput = document.getElementById('showSuggestions') as HTMLInputElement | null;
+    const showFloatingButtonInput = document.getElementById('showFloatingButton') as HTMLInputElement | null;
+
+    settings.autoSavePreferences = {
+      autoSaveEnabled: autoSaveEnabledInput?.checked ?? true,
+      showSuggestions: showSuggestionsInput?.checked ?? true,
+      showFloatingButton: showFloatingButtonInput?.checked ?? true
+    };
 
     settings.fallbackProviders = Array.isArray(this.settings.fallbackProviders)
       ? [...this.settings.fallbackProviders]
@@ -1189,6 +1230,66 @@ class PopupManager {
       testSpeechBtn.addEventListener('click', () => {
         void this.testSpeechSynthesis();
       });
+    }
+
+    // 自动保存偏好设置事件
+    const autoSaveEnabledInput = document.getElementById('autoSaveEnabled') as HTMLInputElement | null;
+    if (autoSaveEnabledInput) {
+      autoSaveEnabledInput.addEventListener('change', () => {
+        if (autoSaveEnabledInput.checked) {
+          this.autoSaveManager.enableAutoSave();
+        } else {
+          this.autoSaveManager.disableAutoSave();
+        }
+      });
+    }
+
+    const showSuggestionsInput = document.getElementById('showSuggestions') as HTMLInputElement | null;
+    if (showSuggestionsInput) {
+      showSuggestionsInput.addEventListener('change', () => {
+        if (showSuggestionsInput.checked) {
+          this.autoSaveManager.enableSuggestions();
+        } else {
+          this.autoSaveManager.disableSuggestions();
+        }
+      });
+    }
+
+    const showFloatingButtonInput = document.getElementById('showFloatingButton') as HTMLInputElement | null;
+    if (showFloatingButtonInput) {
+      showFloatingButtonInput.addEventListener('change', () => {
+        if (showFloatingButtonInput.checked) {
+          this.autoSaveManager.enableFloatingButton();
+        } else {
+          this.autoSaveManager.disableFloatingButton();
+        }
+      });
+    }
+  }
+
+  /**
+   * 检查是否首次使用
+   */
+  private checkFirstTimeUser(): void {
+    try {
+      const hasSeenOnboarding = localStorage.getItem('hasSeenAutoSaveOnboarding');
+      if (!hasSeenOnboarding) {
+        // 延迟显示，避免与其他初始化冲突
+        setTimeout(() => {
+          import('../shared/toast').then(({ toast }) => {
+            toast.info(
+              '💡 提示：验证成功后会自动保存配置，您可以在"保存设置"区域关闭此功能',
+              5000
+            );
+          }).catch(error => {
+            console.error('加载 toast 模块失败:', error);
+          });
+        }, 1000);
+        
+        localStorage.setItem('hasSeenAutoSaveOnboarding', 'true');
+      }
+    } catch (error) {
+      console.error('检查首次使用状态失败:', error);
     }
   }
 
