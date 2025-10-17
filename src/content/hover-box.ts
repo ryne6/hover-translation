@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { calculateOptimalPosition, copyToClipboard as copyTextToClipboard, getLanguageName, showNotification } from '../shared/utils';
 import type { ViewportRect } from '../shared/utils';
+import { ShadowDOMWrapper } from '../shared/shadow-dom-wrapper';
+import { getHoverBoxStyles } from './hover-box-styles';
 
 export interface HoverBoxTranslationData {
   original: string;
@@ -69,6 +71,9 @@ const DEFAULT_TRANSLATION: HoverBoxTranslationData = {
 const getAccentConfig = (accent: string) => ACCENT_CONFIG[accent as AccentId] ?? ACCENT_CONFIG.default;
 
 export class HoverBox {
+  // Shadow DOM 相关
+  private shadowWrapper: ShadowDOMWrapper | null;
+
   private box: HTMLDivElement | null;
 
   private isVisible: boolean;
@@ -119,7 +124,15 @@ export class HoverBox {
 
   private soundBtn: HTMLButtonElement | null;
 
+  // 事件监听器引用（用于清理）
+  private documentClickListener: ((e: MouseEvent) => void) | null;
+
+  private keyDownListener: ((e: KeyboardEvent) => void) | null;
+
+  private resizeListener: (() => void) | null;
+
   constructor() {
+    this.shadowWrapper = null;
     this.box = null;
     this.isVisible = false;
     this.position = { x: 0, y: 0 };
@@ -145,40 +158,107 @@ export class HoverBox {
     this.soundBtn = null;
     this.isButtonClicking = false;
     this.isSpeechPlaying = false;
-
+    this.documentClickListener = null;
+    this.keyDownListener = null;
+    this.resizeListener = null;
   }
 
   create(): void {
+    if (this.shadowWrapper || this.box) return;
+
+    // 检查 Shadow DOM 支持
+    if (!ShadowDOMWrapper.isSupported()) {
+      console.warn('[HoverBox] Shadow DOM not supported, falling back to legacy mode');
+      this.createLegacy();
+      return;
+    }
+
+    try {
+      console.log('[HoverBox] Creating with Shadow DOM');
+      
+      // 1. 创建 Shadow DOM 包装器
+      this.shadowWrapper = new ShadowDOMWrapper('div', { mode: 'closed' });
+      this.shadowWrapper.setContainerClass('hover-translation-container');
+      
+      // 2. 注入样式
+      this.shadowWrapper.injectStyles(getHoverBoxStyles(), 'hover-box-styles');
+      
+      // 3. 创建内容
+      const content = document.createElement('div');
+      content.className = 'hover-translation-box';
+      content.innerHTML = this.getTemplate();
+      this.shadowWrapper.getShadowRoot().appendChild(content);
+      
+      // 4. 获取 box 引用
+      this.box = content;
+      
+      // 5. 设置容器样式
+      this.shadowWrapper.setContainerStyle({
+        position: 'fixed',
+        zIndex: '2147483647',
+        display: 'none',
+        pointerEvents: 'auto'
+      });
+
+      // 6. 添加到页面
+      this.shadowWrapper.appendTo(document.body);
+      
+      // 7. 缓存元素和绑定事件
+      this.cacheInnerElements();
+      this.addEventListeners();
+      
+      console.log('[HoverBox] Created with Shadow DOM successfully');
+    } catch (error) {
+      console.error('[HoverBox] Failed to create Shadow DOM, falling back to legacy mode:', error);
+      this.createLegacy();
+    }
+  }
+
+  /**
+   * 创建传统模式的悬浮框（降级方案）
+   */
+  private createLegacy(): void {
     if (this.box) return;
 
+    console.log('[HoverBox] Creating in legacy mode');
+    
     this.box = document.createElement('div');
     this.box.className = 'hover-translation-box';
     this.box.innerHTML = this.getTemplate();
     this.box.style.display = 'none';
-    // 确保悬浮框始终在最顶层
     this.box.style.zIndex = '2147483647';
     this.box.style.position = 'fixed';
     document.body.appendChild(this.box);
 
     this.cacheInnerElements();
     this.addEventListeners();
-    console.log('HoverBox created');
+    
+    console.log('[HoverBox] Created in legacy mode');
   }
 
   cacheInnerElements(): void {
     if (!this.box) return;
 
-    this.originalTextEl = this.box.querySelector('.text-content.original');
-    this.translatedTextEl = this.box.querySelector('.text-content.translated');
-    this.sourceLangEl = this.box.querySelector('.source-lang');
-    this.targetLangEl = this.box.querySelector('.target-lang');
-    this.providerEl = this.box.querySelector('.provider-info');
-    this.loadingIndicatorEl = this.box.querySelector('.loading-indicator');
-    this.pronunciationSectionEl = this.box.querySelector('.pronunciation-section');
-    this.pronunciationContentEl = this.box.querySelector('.pronunciation-content');
-    this.copyBtn = this.box.querySelector('.copy-btn');
-    this.closeBtn = this.box.querySelector('.close-btn');
-    this.soundBtn = this.box.querySelector('.sound-btn');
+    // 使用辅助方法查询元素（支持 Shadow DOM 和传统模式）
+    const querySelector = <T extends Element>(selector: string): T | null => {
+      if (this.shadowWrapper) {
+        return this.shadowWrapper.querySelector<T>(selector);
+      } else {
+        return this.box!.querySelector<T>(selector);
+      }
+    };
+
+    this.originalTextEl = querySelector('.text-content.original');
+    this.translatedTextEl = querySelector('.text-content.translated');
+    this.sourceLangEl = querySelector('.source-lang');
+    this.targetLangEl = querySelector('.target-lang');
+    this.providerEl = querySelector('.provider-info');
+    this.loadingIndicatorEl = querySelector('.loading-indicator');
+    this.pronunciationSectionEl = querySelector('.pronunciation-section');
+    this.pronunciationContentEl = querySelector('.pronunciation-content');
+    this.copyBtn = querySelector('.copy-btn');
+    this.closeBtn = querySelector('.close-btn');
+    this.soundBtn = querySelector('.sound-btn');
   }
 
   getTemplate(): string {
@@ -234,47 +314,83 @@ export class HoverBox {
   addEventListeners(): void {
     if (!this.box) return;
 
+    // 内部按钮事件 - 在 mousedown 时就设置标志（比 selection cleared 更早）
+    
+    // 复制按钮
+    this.copyBtn?.addEventListener('mousedown', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      this.isButtonClicking = true;
+    });
+    
     this.copyBtn?.addEventListener('click', (event) => {
       event.stopPropagation();
       event.preventDefault();
-      this.isButtonClicking = true;
       this.copyToClipboard();
-      setTimeout(() => { this.isButtonClicking = false; }, 100);
+      setTimeout(() => { 
+        this.isButtonClicking = false;
+      }, 150);
     });
 
+    // 关闭按钮
+    this.closeBtn?.addEventListener('mousedown', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      this.isButtonClicking = true;
+    });
+    
     this.closeBtn?.addEventListener('click', (event) => {
       event.stopPropagation();
       event.preventDefault();
-      this.isButtonClicking = true;
       this.hide();
-      setTimeout(() => { this.isButtonClicking = false; }, 100);
+      setTimeout(() => { 
+        this.isButtonClicking = false;
+      }, 150);
     });
 
-    this.soundBtn?.addEventListener('click', (event) => {
-      console.log('[HoverBox] 播放按钮被点击');
+    // 播放按钮
+    this.soundBtn?.addEventListener('mousedown', (event) => {
       event.stopPropagation();
       event.preventDefault();
       this.isButtonClicking = true;
-      console.log('[HoverBox] isButtonClicking 设置为 true');
+    });
+    
+    this.soundBtn?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
       this.handleSoundButtonClick();
       setTimeout(() => { 
         this.isButtonClicking = false;
-        console.log('[HoverBox] isButtonClicking 重置为 false');
-      }, 500); // 增加到 500ms
+      }, 500);
     });
 
-    // 使用冒泡阶段而不是捕获阶段，这样按钮的 stopPropagation 才能生效
-    document.addEventListener('click', this.handleDocumentClick, false);
-    document.addEventListener('keydown', this.handleKeyDown);
-    window.addEventListener('resize', this.handleResize);
-    window.addEventListener('scroll', this.handleResize, true);
+    // 文档级别的事件监听（使用冒泡阶段）
+    this.documentClickListener = this.handleDocumentClick.bind(this);
+    this.keyDownListener = this.handleKeyDown.bind(this);
+    this.resizeListener = this.handleResize.bind(this);
+    
+    document.addEventListener('click', this.documentClickListener, false);
+    document.addEventListener('keydown', this.keyDownListener);
+    window.addEventListener('resize', this.resizeListener);
+    window.addEventListener('scroll', this.resizeListener, true);
   }
 
   removeEventListeners(): void {
-    document.removeEventListener('click', this.handleDocumentClick, false);
-    document.removeEventListener('keydown', this.handleKeyDown);
-    window.removeEventListener('resize', this.handleResize);
-    window.removeEventListener('scroll', this.handleResize, true);
+    if (this.documentClickListener) {
+      document.removeEventListener('click', this.documentClickListener, false);
+      this.documentClickListener = null;
+    }
+    
+    if (this.keyDownListener) {
+      document.removeEventListener('keydown', this.keyDownListener);
+      this.keyDownListener = null;
+    }
+    
+    if (this.resizeListener) {
+      window.removeEventListener('resize', this.resizeListener);
+      window.removeEventListener('scroll', this.resizeListener, true);
+      this.resizeListener = null;
+    }
   }
 
   private readonly handleResize = (): void => {
@@ -287,7 +403,7 @@ export class HoverBox {
   }
 
   show(translationData: HoverBoxTranslationData): void {
-    if (!this.box) this.create();
+    if (!this.shadowWrapper && !this.box) this.create();
     if (!this.box) return;
 
     this.currentTranslation = translationData;
@@ -295,25 +411,52 @@ export class HoverBox {
 
     this.stopSpeaking();
 
-    this.box.style.visibility = 'hidden';
-    this.box.style.display = 'block';
+    // 设置容器可见性
+    if (this.shadowWrapper) {
+      this.shadowWrapper.setContainerStyle({ 
+        visibility: 'hidden',
+        display: 'block'
+      });
+    } else {
+      this.box.style.visibility = 'hidden';
+      this.box.style.display = 'block';
+    }
 
     this.updateContent(translationData);
     this.positionBox();
-    // 发音功能已隐藏，使用 TTS 语音合成替代
-    // this.renderPronunciation(translationData);
 
-    this.box.style.visibility = '';
+    // 显示动画
+    if (this.shadowWrapper) {
+      this.shadowWrapper.setContainerStyle({ visibility: '' });
+    } else {
+      this.box.style.visibility = '';
+    }
+    
     this.box.classList.add('show');
     this.isVisible = true;
   }
 
   hide(): void {
-    if (!this.box || !this.isVisible) return;
+    if (!this.isVisible) return;
+
+    // 如果按钮正在点击，不隐藏
+    if (this.isButtonClicking) return;
+
+    // 如果语音正在播放，不隐藏
+    if (this.isSpeechPlaying) return;
 
     this.stopSpeaking();
-    this.box.classList.remove('show');
-    this.box.style.display = 'none';
+    
+    if (this.box) {
+      this.box.classList.remove('show');
+    }
+    
+    if (this.shadowWrapper) {
+      this.shadowWrapper.setContainerStyle({ display: 'none' });
+    } else if (this.box) {
+      this.box.style.display = 'none';
+    }
+    
     this.isVisible = false;
   }
 
@@ -353,8 +496,18 @@ export class HoverBox {
     const optimalPosition = calculateOptimalPosition(selectionRect, boxRect, viewport);
 
     this.position = { x: optimalPosition.x, y: optimalPosition.y };
-    this.box.style.left = `${optimalPosition.x}px`;
-    this.box.style.top = `${optimalPosition.y}px`;
+    
+    if (this.shadowWrapper) {
+      // Shadow DOM 模式：设置容器位置
+      this.shadowWrapper.setContainerStyle({
+        left: `${optimalPosition.x}px`,
+        top: `${optimalPosition.y}px`
+      });
+    } else {
+      // 传统模式：直接设置 box 位置
+      this.box.style.left = `${optimalPosition.x}px`;
+      this.box.style.top = `${optimalPosition.y}px`;
+    }
   }
 
   showLoading(): void {
@@ -404,53 +557,43 @@ export class HoverBox {
   private readonly handleDocumentClick = (event: MouseEvent): void => {
     if (!this.isVisible || !this.box) return;
 
-    // 如果正在处理按钮点击，忽略文档点击事件
-    if (this.isButtonClicking) {
-      console.log('[HoverBox] 按钮点击中，忽略文档点击');
-      return;
-    }
+    // 使用微任务延迟检查，确保按钮的 click 事件先执行
+    queueMicrotask(() => {
+      // 再次检查状态（微任务执行时状态可能已变化）
+      if (!this.isVisible || !this.box) return;
 
-    // 如果语音正在播放，禁止关闭悬浮框
-    if (this.isSpeechPlaying) {
-      console.log('[HoverBox] 语音播放中，禁止关闭悬浮框');
-      return;
-    }
+      // 如果正在处理按钮点击，忽略文档点击事件
+      if (this.isButtonClicking) return;
 
-    // 检查点击目标是否在悬浮框内
-    const target = event.target;
-    
-    // 1. 使用 composedPath 检查（支持 Shadow DOM）
-    const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
-    if (path.includes(this.box)) {
-      console.log('[HoverBox] 点击在悬浮框内（composedPath）');
-      return;
-    }
+      // 如果语音正在播放，禁止关闭悬浮框
+      if (this.isSpeechPlaying) return;
 
-    // 2. 使用 contains 检查
-    const isNodeAvailable = typeof Node === 'function';
-    if (isNodeAvailable && target instanceof Node && this.box.contains(target)) {
-      console.log('[HoverBox] 点击在悬浮框内（contains）');
-      return;
-    }
-
-    // 3. 检查是否点击了悬浮框内的按钮（额外保护）
-    if (target instanceof Element) {
-      const clickedButton = target.closest('.hover-translation-box .btn-icon');
-      if (clickedButton && this.box.contains(clickedButton)) {
-        console.log('[HoverBox] 点击了悬浮框按钮');
-        return;
-      }
+      // 检查点击目标是否在悬浮框内
+      const target = event.target;
       
-      // 检查是否点击了悬浮框内的任何元素
-      const clickedInBox = target.closest('.hover-translation-box');
-      if (clickedInBox === this.box) {
-        console.log('[HoverBox] 点击在悬浮框内（closest）');
-        return;
+      // 使用 composedPath 检查（支持 Shadow DOM）
+      const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+      
+      if (this.shadowWrapper) {
+        // Shadow DOM 模式：检查是否点击在容器内
+        if (path.includes(this.shadowWrapper.getContainer())) {
+          return;
+        }
+      } else {
+        // 传统模式：检查是否点击在 box 内
+        if (path.includes(this.box)) {
+          return;
+        }
+        
+        // 降级方案：使用 contains 检查
+        if (target instanceof Node && this.box.contains(target)) {
+          return;
+        }
       }
-    }
 
-    console.log('[HoverBox] 点击在悬浮框外，关闭悬浮框');
-    this.hide();
+      // 点击在外部，关闭悬浮框
+      this.hide();
+    });
   };
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
@@ -468,7 +611,12 @@ export class HoverBox {
       this.copyResetTimer = null;
     }
 
-    if (this.box?.parentNode) {
+    if (this.shadowWrapper) {
+      // Shadow DOM 模式：销毁包装器
+      this.shadowWrapper.destroy();
+      this.shadowWrapper = null;
+    } else if (this.box?.parentNode) {
+      // 传统模式：移除 box
       this.box.parentNode.removeChild(this.box);
     }
 
@@ -477,7 +625,8 @@ export class HoverBox {
     this.currentRange = null;
     this.pronunciationButtons.clear();
     this.audioPlayers = {};
-    console.log('HoverBox destroyed');
+    
+    console.log('[HoverBox] Destroyed');
   }
 
   // 发音功能已隐藏，使用 TTS 语音合成替代
