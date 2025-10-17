@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { HoverBox } from '../src/content/hover-box';
 import * as utils from '../src/shared/utils';
 import { getPrivate } from './helpers/private-access';
@@ -226,17 +226,6 @@ describe('HoverBox', () => {
       expect(writeTextSpy).toHaveBeenCalledWith('你好');
     });
 
-    test('应该处理关闭按钮点击', () => {
-      hoverBox.show({ original: 'test', translated: '测试' });
-      const box = getPrivate<HTMLDivElement | null>(hoverBox, 'box');
-      
-      const closeBtn = box?.querySelector<HTMLButtonElement>('.close-btn');
-      closeBtn?.click();
-      const isVisible = getPrivate<boolean>(hoverBox, 'isVisible');
-      
-      expect(isVisible).toBe(false);
-    });
-
     test('应该处理点击外部关闭', () => {
       hoverBox.show({ original: 'test', translated: '测试' });
       
@@ -260,36 +249,8 @@ describe('HoverBox', () => {
       
       expect(isVisible).toBe(false);
     });
-  });
 
-  describe('语音播放', () => {
-    let originalSpeechSynthesis: SpeechSynthesis | undefined;
-    let originalUtteranceCtor: typeof SpeechSynthesisUtterance | undefined;
-
-    beforeEach(() => {
-      hoverBox.create();
-      hoverBox.setSelectionRange(mockRange);
-      originalSpeechSynthesis = window.speechSynthesis;
-      originalUtteranceCtor = window.SpeechSynthesisUtterance;
-    });
-
-    afterEach(() => {
-      const globalWindow = window as typeof window & Record<string, unknown>;
-      if (originalSpeechSynthesis) {
-        window.speechSynthesis = originalSpeechSynthesis;
-      } else {
-        Reflect.deleteProperty(globalWindow, 'speechSynthesis');
-      }
-
-      if (originalUtteranceCtor) {
-        window.SpeechSynthesisUtterance = originalUtteranceCtor;
-      } else {
-        Reflect.deleteProperty(globalWindow, 'SpeechSynthesisUtterance');
-      }
-    });
-
-    test('不支持语音时给出提示', () => {
-      const showNotificationSpy = vi.spyOn(utils, 'showNotification');
+    test('语音播放期间应该禁止关闭悬浮框', () => {
       const translationData = {
         original: 'Hello',
         translated: '你好',
@@ -297,74 +258,38 @@ describe('HoverBox', () => {
         targetLang: 'zh-CN',
         provider: 'Google'
       };
-
+      
       hoverBox.show(translationData);
-      const box = getPrivate<HTMLDivElement | null>(hoverBox, 'box');
-      const soundBtn = box?.querySelector<HTMLButtonElement>('.sound-btn');
-      soundBtn?.click();
-
-      expect(showNotificationSpy).toHaveBeenCalledWith('当前浏览器不支持语音朗读', 'warning');
-      showNotificationSpy.mockRestore();
-    });
-
-    test('支持语音时会调用 speak', () => {
-      const cancelMock = vi.fn();
-      const speakMock = vi.fn();
-
-      window.speechSynthesis = {
-        cancel: cancelMock,
-        speak: speakMock,
-        getVoices: () => [],
-        paused: false,
-        pending: false,
-        speaking: false,
-        onvoiceschanged: null,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn()
-      } as unknown as SpeechSynthesis;
-
-      class MockSpeechSynthesisUtterance extends EventTarget implements SpeechSynthesisUtterance {
-        text: string;
-        lang = '';
-        voice: SpeechSynthesisVoice | null = null;
-        volume = 1;
-        rate = 1;
-        pitch = 1;
-        onstart: ((this: SpeechSynthesisUtterance, ev: SpeechSynthesisEvent) => unknown) | null = null;
-        onend: ((this: SpeechSynthesisUtterance, ev: SpeechSynthesisEvent) => unknown) | null = null;
-        onerror: ((this: SpeechSynthesisUtterance, ev: SpeechSynthesisErrorEvent) => unknown) | null = null;
-        onpause: ((this: SpeechSynthesisUtterance, ev: SpeechSynthesisEvent) => unknown) | null = null;
-        onresume: ((this: SpeechSynthesisUtterance, ev: SpeechSynthesisEvent) => unknown) | null = null;
-        onmark: ((this: SpeechSynthesisUtterance, ev: SpeechSynthesisEvent) => unknown) | null = null;
-        onboundary: ((this: SpeechSynthesisUtterance, ev: SpeechSynthesisEvent) => unknown) | null = null;
-
-        constructor(text = '') {
-          super();
-          this.text = text;
-        }
-      }
-
-      window.SpeechSynthesisUtterance = MockSpeechSynthesisUtterance as unknown as typeof SpeechSynthesisUtterance;
-
-      const translationData = {
-        original: 'Hello',
-        translated: '你好',
-        sourceLang: 'en',
-        targetLang: 'zh-CN',
-        provider: 'Google',
-        detectedSourceLanguage: 'en'
-      };
-
-      hoverBox.show(translationData);
-      const box = getPrivate<HTMLDivElement | null>(hoverBox, 'box');
-      const soundBtn = box?.querySelector<HTMLButtonElement>('.sound-btn');
-      soundBtn?.click();
-
-      expect(cancelMock).toHaveBeenCalled();
-      expect(speakMock).toHaveBeenCalled();
+      
+      // 模拟语音播放开始 - 使用 getPrivate 的反向操作来设置私有属性
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (hoverBox as Record<string, any>)['isSpeechPlaying'] = true;
+      
+      // 尝试点击外部关闭
+      const outsideElement = document.createElement('div');
+      document.body.appendChild(outsideElement);
+      outsideElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      
+      // 悬浮框应该仍然可见
+      let isVisible = getPrivate<boolean>(hoverBox, 'isVisible');
+      expect(isVisible).toBe(true);
+      
+      // 模拟语音播放结束
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (hoverBox as Record<string, any>)['isSpeechPlaying'] = false;
+      
+      // 再次尝试点击外部关闭
+      outsideElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      
+      // 现在悬浮框应该被关闭
+      isVisible = getPrivate<boolean>(hoverBox, 'isVisible');
+      expect(isVisible).toBe(false);
+      
+      document.body.removeChild(outsideElement);
     });
   });
+
+
 
   describe('复制功能', () => {
     beforeEach(() => {

@@ -1,7 +1,7 @@
 /* 悬浮翻译框基础样式 */
 .hover-translation-box {
   position: fixed;
-  z-index: 10000;
+  z-index: 2147483647 !important;
   min-width: 280px;
   max-width: 400px;
   background: var(--bg-secondary);
@@ -17,6 +17,7 @@
   transition: all var(--duration-normal) var(--ease-out);
   pointer-events: auto;
   user-select: text;
+  isolation: isolate;
 }
 
 .hover-translation-box.show {
