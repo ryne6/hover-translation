@@ -76,8 +76,6 @@
 /* 防止与页面样式冲突 */
 .hover-translation-box,
 .hover-translation-box * {
-  all: unset;
-  display: revert;
   box-sizing: border-box;
 }
 
