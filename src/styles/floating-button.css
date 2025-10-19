@@ -1,18 +1,18 @@
 /* 浮动保存按钮基础样式 */
 .floating-save-button {
   position: fixed;
-  padding: 14px 28px;
-  background: #3498db;
-  color: white;
+  padding: 12px 24px;
+  background: var(--brand-600);  /* #7C3AED - 品牌紫色 */
+  color: var(--text-inverse);  /* 白色文本 */
   border: none;
-  border-radius: 28px;
-  font-size: 16px;
-  font-weight: 500;
+  border-radius: var(--radius-full);  /* 完全圆角 */
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25), 0 2px 4px rgba(0, 0, 0, 0.1);
   opacity: 0;
   transform: scale(0.8);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-slow) var(--ease-out);
   z-index: 9999;
   white-space: nowrap;
   user-select: none;
@@ -34,13 +34,14 @@
 /* Hover 效果 */
 .floating-save-button:hover:not(:disabled) {
   transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
-  background: #2980b9;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35), 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: var(--brand-700);  /* #6D28D9 */
 }
 
 /* Active 效果 */
 .floating-save-button:active:not(:disabled) {
   transform: scale(0.98);
+  background: var(--brand-800);  /* #5B21B6 */
 }
 
 /* 禁用状态 */
@@ -75,26 +76,29 @@
 
 /* 保存中状态 */
 .floating-save-button-saving {
-  background: #95a5a6;
+  background: var(--gray-500);  /* #6B7280 */
   cursor: wait;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
 /* 成功状态 */
 .floating-save-button-success {
-  background: #2ecc71;
+  background: var(--success-500);  /* #10B981 */
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
   animation: successPulse 0.5s ease-out;
 }
 
 /* 错误状态 */
 .floating-save-button-error {
-  background: #e74c3c;
+  background: var(--error-500);  /* #EF4444 */
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
   animation: shake 0.5s ease-out;
 }
 
 /* 脉冲动画 */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -117,13 +121,21 @@
 
 /* 抖动动画 */
 @keyframes shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-5px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(5px);
   }
 }
@@ -187,14 +199,14 @@
 }
 
 /* 暗色主题支持 */
-@media (prefers-color-scheme: dark) {
-  .floating-save-button {
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.5);
-  }
+[data-theme="dark"] .floating-save-button {
+  background: var(--brand-500);  /* 深色模式下使用稍亮的品牌色 */
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
 
-  .floating-save-button:hover:not(:disabled) {
-    box-shadow: 0 6px 16px rgba(52, 152, 219, 0.6);
-  }
+[data-theme="dark"] .floating-save-button:hover:not(:disabled) {
+  background: var(--brand-600);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.5);
 }
 
 /* 高对比度模式支持 */
@@ -244,24 +256,25 @@
 
 /* 焦点样式（键盘导航） */
 .floating-save-button:focus-visible {
-  outline: 3px solid rgba(52, 152, 219, 0.5);
+  outline: 2px solid var(--brand-500);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2);
 }
 
 /* 触摸设备优化 */
 @media (hover: none) and (pointer: coarse) {
   .floating-save-button {
-    padding: 16px 32px;
-    font-size: 16px;
+    padding: 14px 28px;
+    font-size: var(--text-base);
   }
 
   .floating-save-button:hover:not(:disabled) {
     transform: scale(1);
-    background: #3498db;
+    background: var(--brand-600);
   }
 
   .floating-save-button:active:not(:disabled) {
     transform: scale(0.95);
-    background: #2980b9;
+    background: var(--brand-700);
   }
 }

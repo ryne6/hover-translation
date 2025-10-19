@@ -57,12 +57,12 @@ body {
   margin: 12px 0 4px;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #000000;
+  color: var(--text-primary);
 }
 
 .version {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-tertiary);
 }
 
 .sidebar-nav {
@@ -135,13 +135,13 @@ body {
 .page-title {
   font-size: 2rem;
   font-weight: 600;
-  color: #000000;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .page-description {
   font-size: 1rem;
-  color: var(--text-muted);
+  color: var(--text-tertiary);
 }
 
 .page-content {
@@ -295,7 +295,7 @@ body {
 .category-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #000000;
+  color: var(--text-primary);
   border-bottom: 1px solid var(--border-light);
   padding-bottom: 8px;
 }
@@ -349,12 +349,12 @@ body {
 .provider-name {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #000000;
+  color: var(--text-primary);
 }
 
 .provider-desc {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-tertiary);
 }
 
 .switch {
@@ -723,7 +723,7 @@ input[type="radio"] {
 .stat-value {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #000000;
+  color: var(--text-primary);
 }
 
 .today-stats,
